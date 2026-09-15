@@ -187,6 +187,18 @@ app.post('/api/restore', (req, res) => {
   res.json({ success: true, message: 'Restored successfully', count: req.body.length })
 })
 
+// Serve static build in production
+const DIST_DIR = path.join(__dirname, 'dist')
+if (fs.existsSync(DIST_DIR)) {
+  app.use(express.static(DIST_DIR))
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api')) {
+      return res.sendFile(path.join(DIST_DIR, 'index.html'))
+    }
+    next()
+  })
+}
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Mindmap REST API Server is running on http://0.0.0.0:${PORT}`)
 })
