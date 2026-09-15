@@ -1,0 +1,38 @@
+[
+  {
+    "id": "map_mu1xc28x",
+    "title": "Zeebee.vn",
+    "nodes": [
+      {
+        "id": "node_mu20hg1a",
+        "label": "Floating Topic",
+        "color": "#10b981",
+        "border": "#059669",
+        "x": 314,
+        "y": 303,
+        "selected": true
+      }
+    ],
+    "edges": [],
+    "updatedAt": "2026-09-15T03:23:00.124Z",
+    "selectedNodeId": "node_mu20hg1a"
+  },
+  {
+    "id": "assitand_default",
+    "title": "Assitand",
+    "nodes": [
+      {
+        "id": "assitand",
+        "label": "Assitand",
+        "color": "#f87171",
+        "border": "#ef4444",
+        "x": 216,
+        "y": 234,
+        "selected": true
+      }
+    ],
+    "edges": [],
+    "updatedAt": "2026-09-15T03:23:15.987Z",
+    "selectedNodeId": "assitand"
+  }
+]
