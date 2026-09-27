@@ -10,7 +10,7 @@
         "border": "#d97706",
         "x": -242,
         "y": 598,
-        "selected": false,
+        "selected": true,
         "type": "image",
         "imageUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80",
         "caption": "Ảnh minh họa"
@@ -20,7 +20,7 @@
         "label": "Persona",
         "color": "#10b981",
         "border": "#059669",
-        "x": 32,
+        "x": 33,
         "y": 288,
         "selected": false,
         "type": "topic"
@@ -56,32 +56,32 @@
       },
       {
         "id": "node_mujw5l7u",
-        "label": "Fanpage : quảng cáo Long Hải",
+        "label": "Fp: QCLH",
         "color": "#38bdf8",
         "border": "#0284c7",
-        "x": 332,
-        "y": 236,
+        "x": 414,
+        "y": 224,
         "selected": false,
-        "type": "text",
+        "type": "link",
         "content": "Chạy quảng cáo trạm",
         "imageUrl": "",
         "caption": "",
         "videoUrl": "",
-        "description": "",
+        "description": "Fanpage : quảng cáo Long Hải",
         "status": "",
         "statusColor": "#0284c7",
         "fields": [],
-        "url": ""
+        "url": "https://www.facebook.com/quangcaolonghai"
       },
       {
         "id": "node_mujw73y3",
-        "label": "Website: 72k1.com",
+        "label": "Website trạm",
         "color": "#ec4899",
         "border": "#db2777",
-        "x": 332,
-        "y": 360,
-        "selected": true,
-        "type": "text",
+        "x": 409,
+        "y": 343,
+        "selected": false,
+        "type": "link",
         "content": "Sàn thương mại điện tử long Hải",
         "imageUrl": "",
         "caption": "",
@@ -90,11 +90,41 @@
         "status": "",
         "statusColor": "#0284c7",
         "fields": [],
-        "url": ""
+        "url": "https://72k1.com/"
+      },
+      {
+        "id": "node_mujwcp05",
+        "label": "FB G: qclh",
+        "color": "#a855f7",
+        "border": "#7e22ce",
+        "x": 422,
+        "y": 480,
+        "selected": false,
+        "type": "link",
+        "content": "Quảng cáo long hải",
+        "imageUrl": "",
+        "caption": "",
+        "videoUrl": "",
+        "description": "",
+        "status": "",
+        "statusColor": "#0284c7",
+        "fields": [],
+        "url": "https://www.facebook.com/groups/mbsbrvt"
       }
     ],
-    "edges": [],
-    "updatedAt": "2026-09-27T14:08:06.820Z",
-    "selectedNodeId": "node_mujw73y3"
+    "edges": [
+      {
+        "id": "e_mujwo7uz",
+        "source": "node_mujw326a",
+        "target": "node_mujw5l7u",
+        "color": "#059669",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target"
+      }
+    ],
+    "updatedAt": "2026-09-27T14:20:19.496Z",
+    "selectedNodeId": "node_mujszgd2"
   }
 ]

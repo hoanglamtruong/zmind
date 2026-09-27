@@ -1,57 +1,58 @@
 <template>
   <div 
     v-if="relationCustomizerState.isOpen && currentEdge"
-    class="fixed z-50 bg-white rounded-2xl shadow-2xl border border-gray-200/90 w-72 select-none text-slate-800 text-xs overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+    class="fixed z-50 bg-white rounded-2xl shadow-2xl border border-gray-200/90 w-80 select-none text-slate-800 text-xs overflow-hidden animate-in fade-in zoom-in-95 duration-150"
     :style="{
       left: `${relationCustomizerState.posX}px`,
       top: `${relationCustomizerState.posY}px`
     }"
     @mousedown.stop
   >
-    <!-- Header: 3 Tabs (Hand/Line, A Text, F Format - EXACT MINDOMO UI) -->
+    <!-- Header: 3 Tabs (Kiểu nét, Nhãn & Link, Nâng cao) -->
     <div class="grid grid-cols-3 border-b border-gray-200 bg-gray-50/50">
-      <!-- Tab 1: Line -->
+      <!-- Tab 1: Line Style -->
       <button 
         @click="relationCustomizerState.activeTab = 'line'"
         :class="[
-          'py-2.5 flex items-center justify-center transition-colors border-r border-gray-200',
+          'py-2.5 flex items-center justify-center gap-1.5 transition-colors border-r border-gray-200 font-medium text-xs cursor-pointer',
           relationCustomizerState.activeTab === 'line' 
             ? 'bg-white text-sky-600 font-bold border-b-2 border-b-sky-500 shadow-xs' 
             : 'text-gray-500 hover:text-gray-800'
         ]"
-        title="Line Style"
+        title="Đường nét & Màu sắc"
       >
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
-        </svg>
+        <Paintbrush class="w-3.5 h-3.5" />
+        <span>Kiểu nét</span>
       </button>
 
-      <!-- Tab 2: A Text -->
+      <!-- Tab 2: Label & Link -->
       <button 
         @click="relationCustomizerState.activeTab = 'text'"
         :class="[
-          'py-2.5 flex items-center justify-center transition-colors border-r border-gray-200 font-serif text-sm',
+          'py-2.5 flex items-center justify-center gap-1.5 transition-colors border-r border-gray-200 font-medium text-xs cursor-pointer',
           relationCustomizerState.activeTab === 'text' 
-            ? 'bg-white text-sky-600 font-bold border-b-2 border-b-sky-500 shadow-xs underline underline-offset-4' 
+            ? 'bg-white text-sky-600 font-bold border-b-2 border-b-sky-500 shadow-xs' 
             : 'text-gray-500 hover:text-gray-800'
         ]"
-        title="Label / Text"
+        title="Nhãn & Liên kết Web"
       >
-        <span class="underline underline-offset-2">A</span>
+        <Tag class="w-3.5 h-3.5" />
+        <span>Nhãn & Link</span>
       </button>
 
-      <!-- Tab 3: F Format -->
+      <!-- Tab 3: Format -->
       <button 
         @click="relationCustomizerState.activeTab = 'format'"
         :class="[
-          'py-2.5 flex items-center justify-center transition-colors font-serif text-sm',
+          'py-2.5 flex items-center justify-center gap-1.5 transition-colors font-medium text-xs cursor-pointer',
           relationCustomizerState.activeTab === 'format' 
             ? 'bg-white text-sky-600 font-bold border-b-2 border-b-sky-500 shadow-xs' 
             : 'text-gray-500 hover:text-gray-800'
         ]"
-        title="Format"
+        title="Tùy chọn khác"
       >
-        F
+        <Sliders class="w-3.5 h-3.5" />
+        <span>Nâng cao</span>
       </button>
     </div>
 
@@ -285,58 +286,109 @@
       </div>
     </div>
 
-    <!-- TAB 2: TEXT LABEL (EXACT MINDOMO "ADD LABEL" UI) -->
-    <div v-else-if="relationCustomizerState.activeTab === 'text'" class="p-6 flex flex-col items-center justify-center min-h-[220px]">
-      <!-- Case 1: No label yet -> Show centered blue "Add Label" link like screenshot -->
-      <div v-if="!currentEdge.label" class="flex flex-col items-center justify-center space-y-3 py-6">
-        <button 
-          @click="enableLabel"
-          class="text-sky-600 hover:text-sky-700 text-sm font-semibold underline underline-offset-4 hover:opacity-80 transition-all cursor-pointer"
-        >
-          Add Label
-        </button>
-        <p class="text-[11px] text-gray-400 text-center max-w-[180px]">
-          Nhấp để thêm nhãn ghi chú trực tiếp lên đường liên kết
-        </p>
-      </div>
-
-      <!-- Case 2: Label already exists -> Editable input with formatting -->
-      <div v-else class="w-full space-y-4">
-        <div class="space-y-1.5">
-          <label class="block text-gray-500 font-medium text-xs">Nội dung nhãn:</label>
-          <input 
-            ref="labelInputRef"
-            type="text" 
-            :value="currentEdge.label"
-            @input="setLabel($event.target.value)"
-            placeholder="Nhập tên nhãn..."
-            class="w-full px-3 py-2 border border-sky-400 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-sky-200 bg-sky-50/20"
-            autoFocus
-          />
-        </div>
-
-        <!-- Preset quick labels -->
-        <div class="flex flex-wrap gap-1.5">
-          <button @click="setLabel('discuss')" class="px-2.5 py-1 bg-rose-50 text-rose-600 rounded-lg text-[11px] font-bold border border-rose-200 hover:bg-rose-100">discuss</button>
-          <button @click="setLabel('liên kết')" class="px-2.5 py-1 bg-sky-50 text-sky-600 rounded-lg text-[11px] font-bold border border-sky-200 hover:bg-sky-100">liên kết</button>
-          <button @click="setLabel('phụ thuộc')" class="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-lg text-[11px] font-bold border border-amber-200 hover:bg-amber-100">phụ thuộc</button>
-          <button @click="setLabel('báo cáo')" class="px-2.5 py-1 bg-purple-50 text-purple-700 rounded-lg text-[11px] font-bold border border-purple-200 hover:bg-purple-100">báo cáo</button>
-        </div>
-
-        <div class="border-t border-gray-100 pt-2 flex justify-between items-center">
+    <!-- TAB 2: TEXT LABEL & WEB LINK -->
+    <div v-else-if="relationCustomizerState.activeTab === 'text'" class="p-4 space-y-3.5 select-text">
+      <!-- Section A: Label -->
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between">
+          <label class="font-bold text-gray-700 text-xs flex items-center gap-1.5">
+            <Tag class="w-3.5 h-3.5 text-sky-600" />
+            <span>Tên nhãn (Label)</span>
+          </label>
           <button 
+            v-if="currentEdge.label"
+            type="button" 
             @click="setLabel('')" 
-            class="text-rose-500 hover:text-rose-700 text-xs font-semibold hover:underline"
+            class="text-[11px] text-rose-500 hover:text-rose-700 hover:underline font-medium cursor-pointer"
           >
             Xóa nhãn
           </button>
+        </div>
+        <input 
+          ref="labelInputRef"
+          type="text" 
+          :value="currentEdge.label || ''"
+          @input="setLabel($event.target.value)"
+          placeholder="Nhập nhãn hiển thị trên đường nối..."
+          class="w-full px-3 py-1.5 border border-gray-200 focus:border-sky-500 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-sky-100 bg-white"
+          autoFocus
+        />
+
+        <!-- Preset quick labels -->
+        <div class="flex flex-wrap gap-1 pt-0.5">
           <button 
-            @click="closeRelationCustomizer" 
-            class="px-3 py-1 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800"
+            type="button"
+            v-for="preset in ['discuss', 'liên kết', 'phụ thuộc', 'báo cáo', 'đối tác', 'quy trình']"
+            :key="preset"
+            @click="setLabel(preset)" 
+            class="px-2 py-0.5 bg-gray-100 hover:bg-sky-100 hover:text-sky-700 text-gray-600 rounded-lg text-[10px] font-semibold transition-colors cursor-pointer"
           >
-            Xong
+            {{ preset }}
           </button>
         </div>
+      </div>
+
+      <div class="border-t border-gray-100"></div>
+
+      <!-- Section B: Web Link (URL) -->
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between">
+          <label class="font-bold text-gray-700 text-xs flex items-center gap-1.5">
+            <LinkIcon class="w-3.5 h-3.5 text-emerald-600" />
+            <span>Liên kết Web (Link / URL)</span>
+          </label>
+          <button 
+            v-if="currentEdge.link"
+            type="button" 
+            @click="setLink('')" 
+            class="text-[11px] text-rose-500 hover:text-rose-700 hover:underline font-medium cursor-pointer"
+          >
+            Xóa link
+          </button>
+        </div>
+        <input 
+          type="text" 
+          :value="currentEdge.link || ''"
+          @input="setLink($event.target.value)"
+          placeholder="https://facebook.com hoặc link trang web..."
+          class="w-full px-3 py-1.5 border border-gray-200 focus:border-emerald-500 rounded-xl text-xs font-mono outline-none focus:ring-2 focus:ring-emerald-100 bg-white"
+        />
+
+        <!-- Link Preview & Test Open -->
+        <div v-if="currentEdge.link" class="flex items-center justify-between bg-emerald-50/80 border border-emerald-200/80 px-2.5 py-1.5 rounded-xl text-xs mt-1">
+          <div class="flex items-center gap-1.5 text-emerald-800 text-[11px] font-medium truncate max-w-[190px]">
+            <ExternalLink class="w-3 h-3 text-emerald-600 shrink-0" />
+            <span class="truncate">{{ currentEdge.link }}</span>
+          </div>
+          <a 
+            :href="formatLinkUrl(currentEdge.link)" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="text-[11px] text-emerald-700 hover:text-emerald-900 font-bold hover:underline shrink-0 ml-1.5"
+          >
+            Mở thử ↗
+          </a>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-100 pt-1 flex justify-between items-center">
+        <button 
+          v-if="currentEdge.label || currentEdge.link"
+          type="button"
+          @click="clearAll" 
+          class="text-rose-500 hover:text-rose-700 text-xs font-semibold hover:underline cursor-pointer"
+        >
+          Xóa cả nhãn & link
+        </button>
+        <span v-else class="text-[11px] text-gray-400 italic">Nhập nhãn hoặc link ở trên</span>
+
+        <button 
+          type="button"
+          @click="closeRelationCustomizer" 
+          class="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-xs cursor-pointer"
+        >
+          Hoàn tất
+        </button>
       </div>
     </div>
 
@@ -346,7 +398,7 @@
       <div class="space-y-2">
         <button 
           @click="flipDirection"
-          class="w-full py-2 px-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl flex items-center justify-between text-xs font-medium"
+          class="w-full py-2 px-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl flex items-center justify-between text-xs font-medium cursor-pointer"
         >
           <span>Đảo ngược hướng liên kết</span>
           <span class="text-gray-400 font-bold">⇄</span>
@@ -354,7 +406,7 @@
 
         <button 
           @click="resetRelation"
-          class="w-full py-2 px-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl flex items-center justify-between text-xs font-medium"
+          class="w-full py-2 px-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl flex items-center justify-between text-xs font-medium cursor-pointer"
         >
           <span>Đặt lại đường cong mặc định</span>
           <span class="text-gray-400">↺</span>
@@ -365,7 +417,7 @@
     <!-- Close button -->
     <button 
       @click="closeRelationCustomizer" 
-      class="absolute top-2.5 right-2.5 text-gray-400 hover:text-gray-700 text-xs font-bold p-1 rounded-md hover:bg-gray-100"
+      class="absolute top-2.5 right-2.5 text-gray-400 hover:text-gray-700 text-xs font-bold p-1 rounded-md hover:bg-gray-100 cursor-pointer"
       title="Đóng"
     >
       ✕
@@ -379,6 +431,7 @@ import {
   store, relationCustomizerState, updateEdgeProps, 
   deleteEdge, resetEdge, closeRelationCustomizer 
 } from '../store/mindmapStore.js'
+import { Tag, Link as LinkIcon, ExternalLink, Paintbrush, Sliders } from 'lucide-vue-next'
 
 const labelInputRef = ref(null)
 
@@ -440,6 +493,26 @@ function setLabel(lbl) {
   if (currentEdge.value) {
     updateEdgeProps(currentEdge.value.id, { label: lbl })
   }
+}
+
+function setLink(url) {
+  if (currentEdge.value) {
+    updateEdgeProps(currentEdge.value.id, { link: url })
+  }
+}
+
+function clearAll() {
+  if (currentEdge.value) {
+    updateEdgeProps(currentEdge.value.id, { label: '', link: '' })
+  }
+}
+
+function formatLinkUrl(url) {
+  if (!url) return '#'
+  if (!/^https?:\/\//i.test(url)) {
+    return 'https://' + url
+  }
+  return url
 }
 
 function flipDirection() {

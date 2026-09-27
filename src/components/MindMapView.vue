@@ -79,6 +79,19 @@
             @click.stop="onEdgeClick(edge.id, $event)"
           />
 
+          <!-- Invisible wider hit-test stroke for easier clicking / hovering -->
+          <path 
+            :d="edge.d"
+            fill="none"
+            stroke="transparent"
+            stroke-width="20"
+            class="cursor-pointer"
+            @click.stop="onEdgeClick(edge.id, $event)"
+            @dblclick.stop="openLabelCustomizer(edge.id, $event)"
+            @mouseenter="hoveredEdgeId = edge.id"
+            @mouseleave="hoveredEdgeId = null"
+          />
+
           <!-- Actual Visible Path -->
           <path
             :d="edge.d"
@@ -95,6 +108,9 @@
               relationCustomizerState.edgeId === edge.id ? 'stroke-[3px] filter drop-shadow' : 'hover:opacity-80'
             ]"
             @click.stop="onEdgeClick(edge.id, $event)"
+            @dblclick.stop="openLabelCustomizer(edge.id, $event)"
+            @mouseenter="hoveredEdgeId = edge.id"
+            @mouseleave="hoveredEdgeId = null"
           />
 
           <!-- INTERACTIVE 2 BÉZIER CONTROL HANDLES ("2 RÂU ĐIỀU HƯỚNG") -->
@@ -162,49 +178,96 @@
         />
       </svg>
 
-      <!-- EDGE LABELS & LABEL BUTTON HANDLES -->
+      <!-- EDGE LABELS & LINK BADGES -->
       <template v-for="edge in edgePaths" :key="'label_group_' + edge.id">
-        <!-- 1. Case: Has Label -> Render Pill Badge -->
+        <!-- 1. Case: Has Label OR Has Link -> Render rich badge -->
         <div 
-          v-if="edge.label"
+          v-if="edge.label || edge.link"
           @click.stop="openLabelCustomizer(edge.id, $event)"
-          class="absolute px-3 py-0.5 rounded-full text-white text-[11px] font-bold shadow-md cursor-pointer hover:scale-110 transition-transform -translate-x-1/2 -translate-y-1/2 z-20 flex items-center gap-1 group"
+          class="absolute rounded-full text-white text-[11px] font-bold shadow-md cursor-pointer hover:scale-105 transition-all -translate-x-1/2 -translate-y-1/2 z-20 flex items-center gap-1.5 px-3 py-1 group select-none border border-white/50"
           :style="{
             left: `${edge.midX}px`,
             top: `${edge.midY}px`,
-            backgroundColor: edge.color
+            backgroundColor: edge.color || '#0284c7'
           }"
-          title="Nhấp đúp để sửa nhãn nhanh"
+          title="Nhấp để tùy chỉnh Nhãn & Link"
         >
-          <!-- Inline text edit for label -->
-          <input 
-            v-if="editingLabelEdgeId === edge.id"
-            v-model="editLabelText"
-            @blur="saveEdgeLabel(edge.id)"
-            @keydown.enter="saveEdgeLabel(edge.id)"
-            class="bg-transparent text-white font-bold outline-none text-center w-16"
-            autoFocus
-          />
-          <span v-else @dblclick.stop="startEditEdgeLabel(edge)">
-            {{ edge.label }}
-          </span>
+          <!-- Label text if present -->
+          <div 
+            v-if="edge.label" 
+            class="flex items-center gap-1"
+          >
+            <!-- Inline text edit for label -->
+            <input 
+              v-if="editingLabelEdgeId === edge.id"
+              v-model="editLabelText"
+              @blur="saveEdgeLabel(edge.id)"
+              @keydown.enter="saveEdgeLabel(edge.id)"
+              @click.stop
+              class="bg-white/20 text-white font-bold outline-none text-center px-1.5 py-0.5 rounded text-xs min-w-16"
+              autoFocus
+            />
+            <span 
+              v-else 
+              @dblclick.stop="startEditEdgeLabel(edge)" 
+              class="truncate max-w-[130px]"
+              title="Nhấp đúp để sửa nhãn nhanh"
+            >
+              {{ edge.label }}
+            </span>
+          </div>
+
+          <!-- Separator dot if both label and link are present -->
+          <span v-if="edge.label && edge.link" class="opacity-50 text-[9px]">•</span>
+
+          <!-- Web Link chip if present -->
+          <a 
+            v-if="edge.link"
+            :href="formatLinkUrl(edge.link)"
+            target="_blank"
+            rel="noopener noreferrer"
+            @click.stop
+            class="flex items-center gap-1 bg-black/25 hover:bg-black/45 px-2 py-0.5 rounded-full text-[10px] text-sky-100 hover:text-white transition-colors cursor-pointer"
+            :title="'Mở liên kết: ' + edge.link"
+          >
+            <ExternalLink class="w-3 h-3 shrink-0" />
+            <span class="truncate max-w-[100px]">{{ getDisplayDomain(edge.link) }}</span>
+          </a>
+
+          <!-- Hover Quick Edit Button -->
+          <button
+            type="button"
+            @click.stop="openLabelCustomizer(edge.id, $event)"
+            class="opacity-0 group-hover:opacity-100 p-0.5 rounded-full hover:bg-black/30 text-white transition-opacity cursor-pointer ml-0.5"
+            title="Sửa nhãn & link"
+          >
+            <Pencil class="w-3 h-3" />
+          </button>
+
+          <!-- Hover Quick Delete Button -->
+          <button
+            type="button"
+            @click.stop="clearEdgeLabelAndLink(edge.id)"
+            class="opacity-0 group-hover:opacity-100 p-0.5 rounded-full hover:bg-rose-600 text-white transition-opacity cursor-pointer"
+            title="Xóa nhãn & link"
+          >
+            <X class="w-3 h-3" />
+          </button>
         </div>
 
-        <!-- 2. Case: Edge is selected but no label yet -> Show handle pill like Mindomo screenshot -->
+        <!-- 2. Case: Edge has NO label and NO link -> Show + Button when selected or hovered -->
         <div 
-          v-else-if="relationCustomizerState.edgeId === edge.id"
+          v-else-if="relationCustomizerState.edgeId === edge.id || hoveredEdgeId === edge.id"
           @click.stop="openLabelCustomizer(edge.id, $event)"
-          class="absolute w-5 h-7 rounded-lg bg-emerald-400 border-2 border-sky-500 shadow-md cursor-pointer hover:scale-115 transition-transform -translate-x-1/2 -translate-y-1/2 z-20 flex items-center justify-center text-white"
+          class="absolute rounded-full bg-white text-sky-600 border border-sky-400 shadow-md cursor-pointer hover:bg-sky-50 hover:scale-110 transition-all -translate-x-1/2 -translate-y-1/2 z-20 flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold select-none animate-in fade-in zoom-in-95 duration-100"
           :style="{
             left: `${edge.midX}px`,
             top: `${edge.midY}px`
           }"
-          title="Thêm nhãn (Add Label)"
+          title="Thêm Nhãn & Link trên đường nối"
         >
-          <!-- Blue circle with triangle down like screenshot -->
-          <div class="w-3 h-3 rounded-full bg-sky-500 flex items-center justify-center">
-            <span class="text-[7px]">▼</span>
-          </div>
+          <Plus class="w-3.5 h-3.5" />
+          <span>Thêm nhãn / link</span>
         </div>
       </template>
 
@@ -729,12 +792,13 @@ import {
   Plus, FileText, Smile, CheckSquare, GitBranch, Trash2, Copy,
   Palette, Paintbrush, Maximize2, Upload, Printer,
   Type, Image as ImageIcon, Video, CreditCard, ExternalLink,
-  Sliders, LayoutGrid
+  Sliders, LayoutGrid, Pencil, Tag, Link as LinkIcon, X
 } from 'lucide-vue-next'
 
 const boardRef = ref(null)
 const zoom = ref(1.0)
 const pan = ref({ x: 40, y: -40 })
+const hoveredEdgeId = ref(null)
 
 // Type Switcher & Node Editor Modal state
 const showTypeSwitcher = ref(false)
@@ -962,8 +1026,8 @@ const edgePaths = computed(() => {
     } else {
       // Curved Bézier (Default Mindomo)
       d = `M ${sx} ${sy} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${tx} ${ty}`
-      midX = (cp1x + cp2x) / 2
-      midY = (cp1y + cp2y) / 2
+      midX = Math.round(0.125 * sx + 0.375 * cp1x + 0.375 * cp2x + 0.125 * tx)
+      midY = Math.round(0.125 * sy + 0.375 * cp1y + 0.375 * cp2y + 0.125 * ty)
     }
 
     return {
@@ -1004,6 +1068,28 @@ function saveEdgeLabel(edgeId) {
     updateEdgeProps(edgeId, { label: editLabelText.value })
     editingLabelEdgeId.value = null
   }
+}
+
+function formatLinkUrl(url) {
+  if (!url) return '#'
+  if (!/^https?:\/\//i.test(url)) {
+    return 'https://' + url
+  }
+  return url
+}
+
+function getDisplayDomain(url) {
+  if (!url) return ''
+  try {
+    const u = new URL(formatLinkUrl(url))
+    return u.hostname.replace(/^www\./, '')
+  } catch {
+    return url
+  }
+}
+
+function clearEdgeLabelAndLink(edgeId) {
+  updateEdgeProps(edgeId, { label: '', link: '' })
 }
 
 function startDragControlPoint(edgeId, cpIndex, event) {
