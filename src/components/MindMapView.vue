@@ -77,7 +77,8 @@
             stroke-width="22"
             class="cursor-pointer"
             @click.stop="onEdgeClick(edge.id, $event)"
-            @dblclick.stop="openEdgeCustomizer(edge.id, $event, 'line')"
+            @dblclick.stop="onEdgeDblClick(edge.id, $event)"
+            @contextmenu.prevent.stop="onEdgeContextMenu(edge.id, $event)"
             @mouseenter="hoveredEdgeId = edge.id"
             @mouseleave="hoveredEdgeId = null"
           />
@@ -98,7 +99,8 @@
               relationCustomizerState.edgeId === edge.id ? 'stroke-[3px] filter drop-shadow' : 'hover:opacity-80'
             ]"
             @click.stop="onEdgeClick(edge.id, $event)"
-            @dblclick.stop="openEdgeCustomizer(edge.id, $event, 'line')"
+            @dblclick.stop="onEdgeDblClick(edge.id, $event)"
+            @contextmenu.prevent.stop="onEdgeContextMenu(edge.id, $event)"
             @mouseenter="hoveredEdgeId = edge.id"
             @mouseleave="hoveredEdgeId = null"
           />
@@ -223,14 +225,16 @@
         <!-- 1. Case: Has Label OR Has Link -> Render rich badge -->
         <div 
           v-if="edge.label || edge.link"
-          @click.stop="openLabelCustomizer(edge.id, $event)"
+          @click.stop="onEdgeClick(edge.id, $event)"
+          @dblclick.stop="onEdgeDblClick(edge.id, $event)"
+          @contextmenu.prevent.stop="onEdgeContextMenu(edge.id, $event)"
           class="absolute rounded-full text-white text-[11px] font-bold shadow-md cursor-pointer hover:scale-105 transition-all -translate-x-1/2 -translate-y-1/2 z-20 flex items-center gap-1.5 px-3 py-1 group select-none border border-white/50"
           :style="{
             left: `${edge.midX}px`,
             top: `${edge.midY}px`,
             backgroundColor: edge.color || '#0284c7'
           }"
-          title="Nhấp để tùy chỉnh Nhãn & Link"
+          title="Nhấp đúp: Sửa nhãn | Chuột phải: Tùy chỉnh đường nối"
         >
           <!-- Label text if present -->
           <div 
@@ -277,7 +281,7 @@
           <!-- Hover Quick Edit Button -->
           <button
             type="button"
-            @click.stop="openLabelCustomizer(edge.id, $event)"
+            @click.stop="onEdgeDblClick(edge.id, $event)"
             class="opacity-0 group-hover:opacity-100 p-0.5 rounded-full hover:bg-black/30 text-white transition-opacity cursor-pointer ml-0.5"
             title="Sửa nhãn & link"
           >
@@ -292,65 +296,6 @@
             title="Xóa nhãn & link"
           >
             <X class="w-3 h-3" />
-          </button>
-        </div>
-
-        <!-- 2. Case: Edge has NO label and NO link -> Show compact quick action pill when selected or hovered -->
-        <div 
-          v-else-if="relationCustomizerState.edgeId === edge.id || hoveredEdgeId === edge.id"
-          class="absolute rounded-full bg-white/95 backdrop-blur-md text-gray-700 border border-gray-200/90 shadow-lg -translate-x-1/2 -translate-y-1/2 z-20 flex items-center gap-1 px-2 py-0.5 select-none animate-in fade-in zoom-in-95 duration-100"
-          :style="{
-            left: `${edge.midX}px`,
-            top: `${edge.midY}px`
-          }"
-          @click.stop
-        >
-          <!-- Button Kiểu nét (open modal on line tab) -->
-          <button 
-            type="button"
-            @click.stop="openEdgeCustomizer(edge.id, $event, 'line')"
-            class="flex items-center gap-1 text-[11px] font-semibold text-gray-700 hover:text-sky-600 hover:bg-sky-50 px-2 py-0.5 rounded-full transition-colors cursor-pointer"
-            title="Đổi màu sắc, kiểu nét, mũi tên"
-          >
-            <Paintbrush class="w-3 h-3 text-sky-500" />
-            <span>Kiểu nét</span>
-          </button>
-
-          <div class="h-3 w-[1px] bg-gray-200"></div>
-
-          <!-- Button Nhãn / Link (open modal on text tab) -->
-          <button 
-            type="button"
-            @click.stop="openLabelCustomizer(edge.id, $event)"
-            class="flex items-center gap-1 text-[11px] font-semibold text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 px-2 py-0.5 rounded-full transition-colors cursor-pointer"
-            title="Thêm nhãn và link web"
-          >
-            <Plus class="w-3 h-3 text-emerald-500" />
-            <span>Nhãn / Link</span>
-          </button>
-
-          <!-- Quick Reset Curve button if curve has been modified -->
-          <template v-if="edge.cp1 || edge.cp2">
-            <div class="h-3 w-[1px] bg-gray-200"></div>
-            <button 
-              type="button"
-              @click.stop="resetEdgeCurve(edge.id)"
-              class="flex items-center gap-1 text-[11px] font-medium text-amber-600 hover:bg-amber-50 px-1.5 py-0.5 rounded-full transition-colors cursor-pointer"
-              title="Đặt lại độ cong mặc định"
-            >
-              <RotateCcw class="w-3 h-3 text-amber-500" />
-            </button>
-          </template>
-
-          <!-- Delete Edge Button -->
-          <div class="h-3 w-[1px] bg-gray-200"></div>
-          <button 
-            type="button"
-            @click.stop="deleteEdge(edge.id)"
-            class="p-1 rounded-full text-gray-400 hover:text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer"
-            title="Xóa đường liên kết này"
-          >
-            <Trash2 class="w-3 h-3" />
           </button>
         </div>
       </template>
@@ -1133,18 +1078,28 @@ const edgePaths = computed(() => {
   }).filter(Boolean)
 })
 
+// 1. Chuột trái 1 lần: Chọn đường nối, hiện 2 điểm uốn cong để kéo (KHÔNG tự động mở bảng tùy chỉnh)
 function onEdgeClick(edgeId, event) {
   store.graph.selectedNodeId = null
   store.graph.nodes.forEach(n => { n.selected = false })
+  closeCanvasContextMenu()
   selectEdge(edgeId)
 }
 
-function openEdgeCustomizer(edgeId, event, tab = 'line') {
-  openRelationCustomizer(edgeId, event, tab)
+// 2. Double click: Mở chỉnh sửa Label & Link
+function onEdgeDblClick(edgeId, event) {
+  store.graph.selectedNodeId = null
+  store.graph.nodes.forEach(n => { n.selected = false })
+  closeCanvasContextMenu()
+  openRelationCustomizer(edgeId, event, 'text')
 }
 
-function openLabelCustomizer(edgeId, event) {
-  openRelationCustomizer(edgeId, event, 'text')
+// 3. Chuột phải: Mở bảng Tùy chỉnh đường nối (Kiểu nét, màu sắc, arrows, độ cong)
+function onEdgeContextMenu(edgeId, event) {
+  store.graph.selectedNodeId = null
+  store.graph.nodes.forEach(n => { n.selected = false })
+  closeCanvasContextMenu()
+  openRelationCustomizer(edgeId, event, 'line')
 }
 
 function startEditEdgeLabel(edge) {

@@ -33,7 +33,7 @@
         "color": "#38bdf8",
         "border": "#0284c7",
         "x": 455,
-        "y": 205,
+        "y": 204,
         "selected": false,
         "type": "link",
         "content": "Chạy quảng cáo trạm",
@@ -51,8 +51,8 @@
         "label": "Website trạm",
         "color": "#ec4899",
         "border": "#db2777",
-        "x": 445,
-        "y": 349,
+        "x": 446,
+        "y": 340,
         "selected": false,
         "type": "link",
         "content": "Sàn thương mại điện tử long Hải",
@@ -70,7 +70,7 @@
         "label": "FB G: qclh",
         "color": "#a855f7",
         "border": "#7e22ce",
-        "x": 465,
+        "x": 468,
         "y": 496,
         "selected": false,
         "type": "link",
@@ -90,7 +90,7 @@
         "color": "#a855f7",
         "border": "#7e22ce",
         "x": 806,
-        "y": 68,
+        "y": 67,
         "selected": false,
         "type": "link",
         "url": "https://zeebee.vn",
@@ -158,9 +158,9 @@
         "label": "Owner.72k1.com",
         "color": "#38bdf8",
         "border": "#0284c7",
-        "x": 819,
-        "y": 494,
-        "selected": true,
+        "x": 816,
+        "y": 519,
+        "selected": false,
         "type": "text",
         "content": "Nhập nội dung văn bản chi tiết ở đây...",
         "imageUrl": "",
@@ -171,6 +171,43 @@
         "statusColor": "#0284c7",
         "fields": [],
         "url": ""
+      },
+      {
+        "id": "node_mujylodv",
+        "label": "Gói S",
+        "color": "#f59e0b",
+        "border": "#d97706",
+        "x": 1108,
+        "y": 61,
+        "selected": false,
+        "type": "topic",
+        "content": "",
+        "imageUrl": "",
+        "caption": "",
+        "videoUrl": "",
+        "description": "",
+        "status": "",
+        "statusColor": "#0284c7",
+        "fields": [],
+        "url": ""
+      },
+      {
+        "id": "node_mujyme4e",
+        "label": "Gói B",
+        "color": "#38bdf8",
+        "border": "#0284c7",
+        "x": 1112,
+        "y": 121,
+        "selected": false
+      },
+      {
+        "id": "node_mujymt1l",
+        "label": "Gói P",
+        "color": "#f59e0b",
+        "border": "#d97706",
+        "x": 1121,
+        "y": 171,
+        "selected": true
       }
     ],
     "edges": [
@@ -188,7 +225,7 @@
         "curvature": 0,
         "cp2": {
           "x": 342,
-          "y": 210
+          "y": 209
         }
       },
       {
@@ -212,12 +249,203 @@
         "strokeWidth": 2,
         "arrow": "target",
         "cp2": {
-          "x": 368,
+          "x": 371,
           "y": 530
         }
+      },
+      {
+        "id": "e_mujyjtls",
+        "source": "node_mujw5l7u",
+        "target": "node_mujxhnda",
+        "color": "#0284c7",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target"
+      },
+      {
+        "id": "e_mujyk1dd",
+        "source": "node_mujw5l7u",
+        "target": "node_mujxl8zj",
+        "color": "#0284c7",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target"
+      },
+      {
+        "id": "e_mujyk5c9",
+        "source": "node_mujw5l7u",
+        "target": "node_mujxmf80",
+        "color": "#0284c7",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target"
+      },
+      {
+        "id": "e_mujyk7tl",
+        "source": "node_mujw5l7u",
+        "target": "node_mujxu1k3",
+        "color": "#0284c7",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target"
+      },
+      {
+        "id": "e_mujykamy",
+        "source": "node_mujw5l7u",
+        "target": "node_mujycwqa",
+        "color": "#0284c7",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target"
+      },
+      {
+        "id": "e_mujykfaw",
+        "source": "node_mujw73y3",
+        "target": "node_mujxhnda",
+        "color": "#db2777",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target"
+      },
+      {
+        "id": "e_mujykhqh",
+        "source": "node_mujw73y3",
+        "target": "node_mujxl8zj",
+        "color": "#db2777",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target"
+      },
+      {
+        "id": "e_mujykjup",
+        "source": "node_mujw73y3",
+        "target": "node_mujxmf80",
+        "color": "#db2777",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target"
+      },
+      {
+        "id": "e_mujyklzs",
+        "source": "node_mujw73y3",
+        "target": "node_mujxu1k3",
+        "color": "#db2777",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target"
+      },
+      {
+        "id": "e_mujyknr3",
+        "source": "node_mujw73y3",
+        "target": "node_mujycwqa",
+        "color": "#db2777",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target"
+      },
+      {
+        "id": "e_mujykqds",
+        "source": "node_mujwcp05",
+        "target": "node_mujxhnda",
+        "color": "#7e22ce",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target"
+      },
+      {
+        "id": "e_mujyktjh",
+        "source": "node_mujwcp05",
+        "target": "node_mujxl8zj",
+        "color": "#7e22ce",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target"
+      },
+      {
+        "id": "e_mujykvoq",
+        "source": "node_mujwcp05",
+        "target": "node_mujxmf80",
+        "color": "#7e22ce",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target"
+      },
+      {
+        "id": "e_mujykxua",
+        "source": "node_mujwcp05",
+        "target": "node_mujxu1k3",
+        "color": "#7e22ce",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target"
+      },
+      {
+        "id": "e_mujykzwp",
+        "source": "node_mujwcp05",
+        "target": "node_mujycwqa",
+        "color": "#7e22ce",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target"
+      },
+      {
+        "id": "e_mujylodw",
+        "source": "node_mujxhnda",
+        "target": "node_mujylodv",
+        "color": "#d97706",
+        "style": "dashed"
+      },
+      {
+        "id": "e_mujylr0b",
+        "source": "node_mujxhnda",
+        "target": "node_mujylodv",
+        "color": "#7e22ce",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target"
+      },
+      {
+        "id": "e_mujyme4f",
+        "source": "node_mujxhnda",
+        "target": "node_mujyme4e",
+        "color": "#0284c7",
+        "style": "dashed"
+      },
+      {
+        "id": "e_mujymfqm",
+        "source": "node_mujxhnda",
+        "target": "node_mujyme4e",
+        "color": "#7e22ce",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target"
+      },
+      {
+        "id": "e_mujymt1l",
+        "source": "node_mujxhnda",
+        "target": "node_mujymt1l",
+        "color": "#d97706",
+        "style": "dashed"
       }
     ],
-    "updatedAt": "2026-09-27T15:07:54.638Z",
-    "selectedNodeId": "node_mujycwqa"
+    "updatedAt": "2026-09-27T15:15:35.919Z",
+    "selectedNodeId": "node_mujymt1l"
   }
 ]
