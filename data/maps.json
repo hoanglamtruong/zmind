@@ -89,12 +89,88 @@
         "label": "Zeebee Platform",
         "color": "#a855f7",
         "border": "#7e22ce",
-        "x": 792,
-        "y": 147,
-        "selected": true,
+        "x": 806,
+        "y": 68,
+        "selected": false,
         "type": "link",
         "url": "https://zeebee.vn",
         "description": "Hệ sinh thái truyền thông & công nghệ"
+      },
+      {
+        "id": "node_mujxl8zj",
+        "label": "zangx.io.vn",
+        "color": "#a855f7",
+        "border": "#7e22ce",
+        "x": 805,
+        "y": 153,
+        "selected": false,
+        "type": "link",
+        "url": "https://zangx.io.vn",
+        "description": "Hệ sinh thái truyền thông & công nghệ",
+        "content": "",
+        "imageUrl": "",
+        "caption": "",
+        "videoUrl": "",
+        "status": "",
+        "statusColor": "#0284c7",
+        "fields": []
+      },
+      {
+        "id": "node_mujxmf80",
+        "label": "Zspace.io.vn",
+        "color": "#a855f7",
+        "border": "#7e22ce",
+        "x": 809,
+        "y": 260,
+        "selected": false,
+        "type": "link",
+        "url": "https://zspace.io.vn",
+        "description": "Hệ sinh thái truyền thông & công nghệ",
+        "content": "",
+        "imageUrl": "",
+        "caption": "",
+        "videoUrl": "",
+        "status": "",
+        "statusColor": "#0284c7",
+        "fields": []
+      },
+      {
+        "id": "node_mujxu1k3",
+        "label": "vtstars.vn",
+        "color": "#ec4899",
+        "border": "#db2777",
+        "x": 806,
+        "y": 381,
+        "selected": false,
+        "type": "link",
+        "url": "https://vtstars.vn",
+        "description": "Hệ sinh thái truyền thông & công nghệ",
+        "content": "",
+        "imageUrl": "",
+        "caption": "",
+        "videoUrl": "",
+        "status": "",
+        "statusColor": "#0284c7",
+        "fields": []
+      },
+      {
+        "id": "node_mujycwqa",
+        "label": "Owner.72k1.com",
+        "color": "#38bdf8",
+        "border": "#0284c7",
+        "x": 819,
+        "y": 494,
+        "selected": true,
+        "type": "text",
+        "content": "Nhập nội dung văn bản chi tiết ở đây...",
+        "imageUrl": "",
+        "caption": "",
+        "videoUrl": "",
+        "description": "",
+        "status": "",
+        "statusColor": "#0284c7",
+        "fields": [],
+        "url": ""
       }
     ],
     "edges": [
@@ -109,7 +185,11 @@
         "arrow": "target",
         "label": "",
         "link": "",
-        "curvature": 0
+        "curvature": 0,
+        "cp2": {
+          "x": 342,
+          "y": 210
+        }
       },
       {
         "id": "e_mujx4dc3",
@@ -137,7 +217,7 @@
         }
       }
     ],
-    "updatedAt": "2026-09-27T14:43:13.546Z",
-    "selectedNodeId": "node_mujxhnda"
+    "updatedAt": "2026-09-27T15:07:54.638Z",
+    "selectedNodeId": "node_mujycwqa"
   }
 ]

@@ -69,25 +69,15 @@
 
         <!-- Edges Rendering -->
         <g v-for="edge in edgePaths" :key="edge.id">
-          <!-- Transparent clickable thick hover hit-box -->
-          <path
-            :d="edge.d"
-            fill="none"
-            stroke="transparent"
-            stroke-width="20"
-            class="cursor-pointer"
-            @click.stop="onEdgeClick(edge.id, $event)"
-          />
-
-          <!-- Invisible wider hit-test stroke for easier clicking / hovering -->
+          <!-- Transparent clickable thick hover hit-box for easy grabbing -->
           <path 
             :d="edge.d"
             fill="none"
             stroke="transparent"
-            stroke-width="20"
+            stroke-width="22"
             class="cursor-pointer"
             @click.stop="onEdgeClick(edge.id, $event)"
-            @dblclick.stop="openLabelCustomizer(edge.id, $event)"
+            @dblclick.stop="openEdgeCustomizer(edge.id, $event, 'line')"
             @mouseenter="hoveredEdgeId = edge.id"
             @mouseleave="hoveredEdgeId = null"
           />
@@ -108,7 +98,7 @@
               relationCustomizerState.edgeId === edge.id ? 'stroke-[3px] filter drop-shadow' : 'hover:opacity-80'
             ]"
             @click.stop="onEdgeClick(edge.id, $event)"
-            @dblclick.stop="openLabelCustomizer(edge.id, $event)"
+            @dblclick.stop="openEdgeCustomizer(edge.id, $event, 'line')"
             @mouseenter="hoveredEdgeId = edge.id"
             @mouseleave="hoveredEdgeId = null"
           />
@@ -305,19 +295,63 @@
           </button>
         </div>
 
-        <!-- 2. Case: Edge has NO label and NO link -> Show + Button when selected or hovered -->
+        <!-- 2. Case: Edge has NO label and NO link -> Show compact quick action pill when selected or hovered -->
         <div 
           v-else-if="relationCustomizerState.edgeId === edge.id || hoveredEdgeId === edge.id"
-          @click.stop="openLabelCustomizer(edge.id, $event)"
-          class="absolute rounded-full bg-white text-sky-600 border border-sky-400 shadow-md cursor-pointer hover:bg-sky-50 hover:scale-110 transition-all -translate-x-1/2 -translate-y-1/2 z-20 flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold select-none animate-in fade-in zoom-in-95 duration-100"
+          class="absolute rounded-full bg-white/95 backdrop-blur-md text-gray-700 border border-gray-200/90 shadow-lg -translate-x-1/2 -translate-y-1/2 z-20 flex items-center gap-1 px-2 py-0.5 select-none animate-in fade-in zoom-in-95 duration-100"
           :style="{
             left: `${edge.midX}px`,
             top: `${edge.midY}px`
           }"
-          title="Thêm Nhãn & Link trên đường nối"
+          @click.stop
         >
-          <Plus class="w-3.5 h-3.5" />
-          <span>Thêm nhãn / link</span>
+          <!-- Button Kiểu nét (open modal on line tab) -->
+          <button 
+            type="button"
+            @click.stop="openEdgeCustomizer(edge.id, $event, 'line')"
+            class="flex items-center gap-1 text-[11px] font-semibold text-gray-700 hover:text-sky-600 hover:bg-sky-50 px-2 py-0.5 rounded-full transition-colors cursor-pointer"
+            title="Đổi màu sắc, kiểu nét, mũi tên"
+          >
+            <Paintbrush class="w-3 h-3 text-sky-500" />
+            <span>Kiểu nét</span>
+          </button>
+
+          <div class="h-3 w-[1px] bg-gray-200"></div>
+
+          <!-- Button Nhãn / Link (open modal on text tab) -->
+          <button 
+            type="button"
+            @click.stop="openLabelCustomizer(edge.id, $event)"
+            class="flex items-center gap-1 text-[11px] font-semibold text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 px-2 py-0.5 rounded-full transition-colors cursor-pointer"
+            title="Thêm nhãn và link web"
+          >
+            <Plus class="w-3 h-3 text-emerald-500" />
+            <span>Nhãn / Link</span>
+          </button>
+
+          <!-- Quick Reset Curve button if curve has been modified -->
+          <template v-if="edge.cp1 || edge.cp2">
+            <div class="h-3 w-[1px] bg-gray-200"></div>
+            <button 
+              type="button"
+              @click.stop="resetEdgeCurve(edge.id)"
+              class="flex items-center gap-1 text-[11px] font-medium text-amber-600 hover:bg-amber-50 px-1.5 py-0.5 rounded-full transition-colors cursor-pointer"
+              title="Đặt lại độ cong mặc định"
+            >
+              <RotateCcw class="w-3 h-3 text-amber-500" />
+            </button>
+          </template>
+
+          <!-- Delete Edge Button -->
+          <div class="h-3 w-[1px] bg-gray-200"></div>
+          <button 
+            type="button"
+            @click.stop="deleteEdge(edge.id)"
+            class="p-1 rounded-full text-gray-400 hover:text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer"
+            title="Xóa đường liên kết này"
+          >
+            <Trash2 class="w-3 h-3" />
+          </button>
         </div>
       </template>
 
@@ -832,7 +866,7 @@ import {
   store, selectNode, deselectAll, updateNodePosition, moveSelectedNodes, updateNodeLabel, 
   addNodeNearSelected, addFloatingTopic, addNodeWithType, changeNodeType, updateNodeProps,
   deleteSelectedNode, duplicateSelectedNode, 
-  toggleTaskComplete, undo, redo, saveToAPI, selectEdge, 
+  toggleTaskComplete, undo, redo, saveToAPI, selectEdge, openRelationCustomizer,
   relationCustomizerState, closeRelationCustomizer, updateEdgeControlPoint, 
   resetSingleControlPoint, resetEdgeCurve,
   updateEdgeProps, selectNodesInBox, deleteEdge, exportToJSON
@@ -843,7 +877,7 @@ import {
   Plus, FileText, Smile, CheckSquare, GitBranch, Trash2, Copy,
   Palette, Paintbrush, Maximize2, Upload, Printer,
   Type, Image as ImageIcon, Video, CreditCard, ExternalLink,
-  Sliders, LayoutGrid, Pencil, Tag, Link as LinkIcon, X
+  Sliders, LayoutGrid, Pencil, Tag, Link as LinkIcon, X, RotateCcw
 } from 'lucide-vue-next'
 
 const boardRef = ref(null)
@@ -1102,12 +1136,15 @@ const edgePaths = computed(() => {
 function onEdgeClick(edgeId, event) {
   store.graph.selectedNodeId = null
   store.graph.nodes.forEach(n => { n.selected = false })
-  selectEdge(edgeId, event)
+  selectEdge(edgeId)
+}
+
+function openEdgeCustomizer(edgeId, event, tab = 'line') {
+  openRelationCustomizer(edgeId, event, tab)
 }
 
 function openLabelCustomizer(edgeId, event) {
-  selectEdge(edgeId, event)
-  relationCustomizerState.activeTab = 'text'
+  openRelationCustomizer(edgeId, event, 'text')
 }
 
 function startEditEdgeLabel(edge) {

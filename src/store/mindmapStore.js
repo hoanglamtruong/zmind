@@ -538,9 +538,18 @@ export const relationCustomizerState = reactive({
   posY: 200
 })
 
-export function selectEdge(edgeId, event = null) {
+export function selectEdge(edgeId) {
+  relationCustomizerState.edgeId = edgeId
+  // Only select the edge (to show curve handles) without popping open the modal
+  relationCustomizerState.isOpen = false
+}
+
+export function openRelationCustomizer(edgeId, event = null, activeTab = null) {
   relationCustomizerState.edgeId = edgeId
   relationCustomizerState.isOpen = true
+  if (activeTab) {
+    relationCustomizerState.activeTab = activeTab
+  }
   if (event) {
     const modalWidth = 320
     const modalHeight = 360
