@@ -143,6 +143,10 @@ export function getSelectedNodes() {
 
 // 2. TẠO (CREATE)
 export function addFloatingTopic(x, y, label = 'Floating Topic') {
+  return addNodeWithType(x, y, 'topic', label)
+}
+
+export function addNodeWithType(x, y, type = 'topic', customLabel = null, extraProps = {}) {
   snapshot()
   const newId = 'node_' + Date.now().toString(36)
   const colors = [
@@ -154,20 +158,89 @@ export function addFloatingTopic(x, y, label = 'Floating Topic') {
   ]
   const randomColor = colors[Math.floor(Math.random() * colors.length)]
 
+  let defaultLabel = 'New Topic'
+  let props = { type }
+
+  if (type === 'text') {
+    defaultLabel = 'Ghi chú'
+    props.content = 'Nhập nội dung văn bản chi tiết ở đây...'
+  } else if (type === 'image') {
+    defaultLabel = 'Hình ảnh'
+    props.imageUrl = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80'
+    props.caption = 'Ảnh minh họa'
+  } else if (type === 'video') {
+    defaultLabel = 'Video Demo'
+    props.videoUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+  } else if (type === 'card') {
+    defaultLabel = 'Thẻ công việc'
+    props.description = 'Kế hoạch triển khai quý'
+    props.status = 'Đang thực hiện'
+    props.statusColor = '#0284c7'
+    props.fields = [
+      { key: 'Phụ trách', value: 'CEO' },
+      { key: 'Hạn chót', value: '30/09/2026' }
+    ]
+  } else if (type === 'link') {
+    defaultLabel = 'Zeebee Platform'
+    props.url = 'https://zeebee.vn'
+    props.description = 'Hệ sinh thái truyền thông & công nghệ'
+  }
+
   const newNode = {
     id: newId,
-    label: label,
+    label: customLabel || defaultLabel,
     color: randomColor.color,
     border: randomColor.border,
     x: Math.round(x),
     y: Math.round(y),
-    selected: true
+    selected: true,
+    ...props,
+    ...extraProps
   }
 
   store.graph.nodes.push(newNode)
   selectNode(newId)
   autoSave()
   return newNode
+}
+
+export function changeNodeType(id, newType) {
+  snapshot()
+  const node = store.graph.nodes.find(n => n.id === id)
+  if (!node) return
+  node.type = newType
+
+  if (newType === 'text' && !node.content) {
+    node.content = 'Nhập nội dung ghi chú ở đây...'
+  } else if (newType === 'image' && !node.imageUrl) {
+    node.imageUrl = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80'
+    node.caption = node.caption || node.label || 'Ảnh minh họa'
+  } else if (newType === 'video' && !node.videoUrl) {
+    node.videoUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+  } else if (newType === 'card') {
+    if (!node.fields) {
+      node.fields = [
+        { key: 'Phụ trách', value: 'CEO' },
+        { key: 'Hạn chót', value: '30/09/2026' }
+      ]
+    }
+    if (!node.status) node.status = 'Đang làm'
+    if (!node.statusColor) node.statusColor = '#0284c7'
+    if (!node.description) node.description = 'Mục tiêu & nhiệm vụ trọng tâm'
+  } else if (newType === 'link' && !node.url) {
+    node.url = 'https://zeebee.vn'
+    if (!node.description) node.description = 'Website chính thức'
+  }
+  autoSave()
+}
+
+export function updateNodeProps(id, props) {
+  snapshot()
+  const node = store.graph.nodes.find(n => n.id === id)
+  if (node) {
+    Object.assign(node, props)
+    autoSave()
+  }
 }
 
 export function addNodeNearSelected() {

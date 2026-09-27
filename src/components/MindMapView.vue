@@ -214,48 +214,176 @@
         :key="node.id"
         @mousedown.stop="startDragNode(node, $event)"
         @click.stop="onNodeClick(node, $event)"
+        @dblclick.stop="openNodeEditor(node)"
         :class="[
-          'absolute px-5 py-2 rounded-full cursor-pointer flex items-center justify-center font-semibold text-sm bg-white shadow-sm z-10 select-none group',
+          'absolute cursor-pointer flex font-semibold text-sm bg-white shadow-sm z-10 select-none group',
           draggingNode ? 'transition-none pointer-events-auto' : 'transition-shadow duration-150',
+          node.type === 'text' || node.type === 'image' || node.type === 'video' || node.type === 'card' 
+            ? 'rounded-2xl p-3 flex-col' 
+            : node.type === 'link' 
+              ? 'rounded-2xl p-2.5 flex-col' 
+              : 'px-5 py-2 rounded-full items-center justify-center flex-row',
           node.selected 
-            ? 'ring-2 ring-[#0284c7] ring-offset-2 ring-offset-white shadow-lg scale-102 bg-sky-50/30' 
+            ? 'ring-2 ring-[#0284c7] ring-offset-2 ring-offset-white shadow-lg bg-sky-50/30' 
             : 'hover:shadow-md'
         ]"
         :style="{
           left: `${node.x}px`,
           top: `${node.y}px`,
           border: `1.8px solid ${node.border}`,
-          color: node.border
+          width: node.type === 'text' || node.type === 'image' ? '220px' : node.type === 'video' ? '260px' : node.type === 'card' ? '240px' : node.type === 'link' ? '220px' : 'auto'
         }"
       >
-        <!-- Completed Checkbox if enabled -->
-        <input 
-          v-if="node.completed !== undefined"
-          type="checkbox"
-          :checked="node.completed"
-          @click.stop="toggleTaskComplete(node.id)"
-          class="w-3.5 h-3.5 rounded text-sky-600 mr-2 focus:ring-0 cursor-pointer"
-        />
+        <!-- 1. BOXTEXT -->
+        <div v-if="node.type === 'text'" class="w-full space-y-1.5 text-left">
+          <div class="flex items-center justify-between border-b border-gray-100 pb-1">
+            <div class="flex items-center gap-1.5 text-xs font-bold truncate" :style="{ color: node.border }">
+              <FileText class="w-3.5 h-3.5 shrink-0" />
+              <span class="truncate">{{ node.label }}</span>
+            </div>
+            <span class="text-[9px] text-gray-400 font-mono uppercase bg-gray-100 px-1 py-0.5 rounded">Text</span>
+          </div>
+          <p class="text-xs text-gray-600 font-normal whitespace-pre-wrap leading-relaxed max-h-24 overflow-y-auto">
+            {{ node.content || 'Nhấn đúp để nhập nội dung...' }}
+          </p>
+        </div>
 
-        <!-- Note Badge indicator -->
-        <span v-if="node.note" class="mr-1.5 text-xs text-amber-500" title="Có ghi chú">📝</span>
+        <!-- 2. BOX ẢNH -->
+        <div v-else-if="node.type === 'image'" class="w-full space-y-1.5 text-left">
+          <div class="rounded-xl overflow-hidden bg-gray-100 h-28 w-full border border-gray-100 flex items-center justify-center">
+            <img 
+              v-if="node.imageUrl" 
+              :src="node.imageUrl" 
+              :alt="node.label"
+              class="w-full h-full object-cover pointer-events-none"
+            />
+            <div v-else class="text-center text-gray-400 p-2">
+              <ImageIcon class="w-6 h-6 mx-auto mb-1 text-gray-300" />
+              <span class="text-[10px]">Chưa có ảnh</span>
+            </div>
+          </div>
+          <div class="text-xs font-bold truncate" :style="{ color: node.border }">
+            {{ node.label }}
+          </div>
+          <p v-if="node.caption" class="text-[11px] text-gray-500 font-normal truncate">
+            {{ node.caption }}
+          </p>
+        </div>
 
-        <!-- Double click to inline edit -->
-        <input 
-          v-if="editingId === node.id"
-          v-model="editLabel"
-          @blur="saveEdit(node.id)"
-          @keydown.enter="saveEdit(node.id)"
-          class="outline-none bg-transparent text-center font-semibold w-24"
-          autoFocus
-        />
-        <span 
-          v-else 
-          @dblclick="startEdit(node)" 
-          :class="['whitespace-nowrap px-1', node.completed ? 'line-through opacity-50' : '']"
-        >
-          {{ node.label }}
-        </span>
+        <!-- 3. BOX VIDEO -->
+        <div v-else-if="node.type === 'video'" class="w-full space-y-1.5 text-left">
+          <div class="flex items-center justify-between border-b border-gray-100 pb-1">
+            <div class="flex items-center gap-1.5 text-xs font-bold truncate" :style="{ color: node.border }">
+              <Video class="w-3.5 h-3.5 shrink-0" />
+              <span class="truncate">{{ node.label }}</span>
+            </div>
+            <span class="text-[9px] text-rose-500 font-mono uppercase bg-rose-50 px-1 py-0.5 rounded font-bold">Video</span>
+          </div>
+          <div class="rounded-xl overflow-hidden bg-black h-36 w-full relative">
+            <iframe 
+              v-if="getYouTubeEmbedUrl(node.videoUrl)"
+              :src="getYouTubeEmbedUrl(node.videoUrl)"
+              class="w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            ></iframe>
+            <div v-else class="w-full h-full flex flex-col items-center justify-center text-gray-400 text-xs">
+              <Video class="w-6 h-6 mb-1 text-gray-500" />
+              <span>Chưa gắn link video</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. CARD THÔNG TIN ĐA TRƯỜNG -->
+        <div v-else-if="node.type === 'card'" class="w-full space-y-2 text-left">
+          <!-- Card Header: Title + Status Badge -->
+          <div class="flex items-start justify-between gap-1.5">
+            <div class="text-xs font-bold truncate" :style="{ color: node.border }">
+              {{ node.label }}
+            </div>
+            <span 
+              v-if="node.status"
+              class="text-[10px] px-2 py-0.5 rounded-full font-bold text-white shrink-0 shadow-2xs"
+              :style="{ backgroundColor: node.statusColor || '#0284c7' }"
+            >
+              {{ node.status }}
+            </span>
+          </div>
+
+          <!-- Description -->
+          <p v-if="node.description" class="text-[11px] text-gray-500 font-normal leading-tight">
+            {{ node.description }}
+          </p>
+
+          <!-- Fields Table -->
+          <div v-if="node.fields && node.fields.length > 0" class="space-y-1 pt-1 border-t border-gray-100">
+            <div 
+              v-for="(f, fi) in node.fields" 
+              :key="fi"
+              class="flex items-center justify-between text-[11px] py-0.5"
+            >
+              <span class="text-gray-400 font-medium">{{ f.key }}:</span>
+              <span class="text-gray-700 font-semibold">{{ f.value }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. LINK BOOKMARK -->
+        <div v-else-if="node.type === 'link'" class="w-full flex items-center justify-between gap-2 text-left">
+          <div class="flex items-center gap-2 overflow-hidden">
+            <div class="w-7 h-7 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0 border border-sky-100">
+              <ExternalLink class="w-3.5 h-3.5" />
+            </div>
+            <div class="overflow-hidden">
+              <div class="text-xs font-bold truncate" :style="{ color: node.border }">
+                {{ node.label }}
+              </div>
+              <div class="text-[10px] text-gray-400 font-mono truncate">
+                {{ formatDomain(node.url) }}
+              </div>
+            </div>
+          </div>
+          <button 
+            @click.stop="openLink(node.url)" 
+            class="p-1 rounded-md text-gray-400 hover:text-sky-600 hover:bg-sky-50 cursor-pointer"
+            title="Mở liên kết trên tab mới"
+          >
+            ↗
+          </button>
+        </div>
+
+        <!-- 6. DEFAULT TOPIC (PILL) -->
+        <div v-else class="flex items-center justify-center w-full">
+          <!-- Completed Checkbox if enabled -->
+          <input 
+            v-if="node.completed !== undefined"
+            type="checkbox"
+            :checked="node.completed"
+            @click.stop="toggleTaskComplete(node.id)"
+            class="w-3.5 h-3.5 rounded text-sky-600 mr-2 focus:ring-0 cursor-pointer"
+          />
+
+          <!-- Note Badge indicator -->
+          <span v-if="node.note" class="mr-1.5 text-xs text-amber-500" title="Có ghi chú">📝</span>
+
+          <!-- Double click to inline edit -->
+          <input 
+            v-if="editingId === node.id"
+            v-model="editLabel"
+            @blur="saveEdit(node.id)"
+            @keydown.enter="saveEdit(node.id)"
+            class="outline-none bg-transparent text-center font-semibold w-24"
+            autoFocus
+          />
+          <span 
+            v-else 
+            @dblclick="startEdit(node)" 
+            :class="['whitespace-nowrap px-1', node.completed ? 'line-through opacity-50' : '']"
+            :style="{ color: node.border }"
+          >
+            {{ node.label }}
+          </span>
+        </div>
 
         <!-- Multi-select check icon badge -->
         <div 
@@ -270,7 +398,7 @@
           v-if="node.selected && selectedCount <= 1"
           @mousedown.stop="startConnect(node)"
           @click.stop="addNodeNearSelected"
-          class="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#0284c7] border-2 border-white flex items-center justify-center text-white text-[9px] font-bold shadow cursor-pointer hover:scale-125 transition-transform"
+          class="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#0284c7] border-2 border-white flex items-center justify-center text-white text-[9px] font-bold shadow cursor-pointer hover:scale-125 transition-transform z-20"
           title="Nhấp để thêm nhánh, hoặc Kéo sang node khác để nối dây"
         >
           +
@@ -284,13 +412,57 @@
         class="absolute bg-white rounded-2xl shadow-xl border border-gray-200 py-1 px-2 flex items-center space-x-1 z-40 transition-none animate-in fade-in"
         :style="{
           left: `${selectedNode.x - 30}px`,
-          top: `${selectedNode.y + 48}px`
+          top: `${selectedNode.y + (getNodeDimensions(selectedNode).height) + 12}px`
         }"
       >
         <!-- Multi-selection badge indicator -->
         <div v-if="selectedCount > 1" class="px-2 py-0.5 mr-1 bg-sky-100 text-sky-700 text-xs font-bold rounded-full flex items-center gap-1">
           <span>Đã chọn {{ selectedCount }}</span>
         </div>
+
+        <!-- Type Switcher Dropdown (Single Node) -->
+        <div v-if="selectedCount <= 1" class="relative">
+          <button 
+            @click.stop="showTypeSwitcher = !showTypeSwitcher" 
+            class="p-1.5 text-gray-600 hover:text-sky-600 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1 cursor-pointer" 
+            title="Đổi kiểu hiển thị node (Topic, Text, Ảnh, Video, Card, Link)"
+          >
+            <LayoutGrid class="w-3.5 h-3.5" />
+            <span class="text-[9px] uppercase font-bold text-sky-600 font-mono">
+              {{ selectedNode.type || 'topic' }}
+            </span>
+          </button>
+
+          <!-- Type Switcher Menu -->
+          <div 
+            v-if="showTypeSwitcher" 
+            @mousedown.stop
+            class="absolute left-0 bottom-full mb-2 bg-white rounded-xl shadow-xl border border-gray-200 py-1 min-w-[150px] z-50 animate-in fade-in"
+          >
+            <button 
+              v-for="t in typeOptions" 
+              :key="t.value"
+              @click="handleNodeTypeChange(t.value)"
+              class="w-full px-3 py-1.5 text-left text-xs flex items-center gap-2 hover:bg-sky-50 hover:text-sky-700 cursor-pointer"
+              :class="(selectedNode.type || 'topic') === t.value ? 'font-bold text-sky-600 bg-sky-50/50' : 'text-gray-700'"
+            >
+              <component :is="t.icon" class="w-3.5 h-3.5" />
+              <span>{{ t.label }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Edit Properties Button (Modal) -->
+        <button 
+          v-if="selectedCount <= 1" 
+          @click="openNodeEditor(selectedNode)" 
+          class="p-1.5 text-gray-600 hover:text-sky-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer" 
+          title="Chỉnh sửa chi tiết nội dung / thuộc tính"
+        >
+          <Sliders class="w-3.5 h-3.5" />
+        </button>
+
+        <div v-if="selectedCount <= 1" class="h-4 w-[1px] bg-gray-200 my-auto"></div>
 
         <!-- 1. Add Subtopic (Tạo - only when 1 node selected) -->
         <button v-if="selectedCount <= 1" @click="addNodeNearSelected" class="p-1.5 text-gray-600 hover:text-sky-600 hover:bg-gray-100 rounded-lg transition-colors" title="Tạo nhánh mới (+)">
@@ -339,6 +511,9 @@
     <!-- RELATIONSHIP CUSTOMIZER POPOVER (Mindomo Line Styling) -->
     <RelationCustomizer />
 
+    <!-- NODE DETAILS & ATTRIBUTES EDITOR MODAL -->
+    <NodeEditorModal :is-open="isNodeEditorOpen" :node="editingNode" @close="closeNodeEditor" />
+
     <!-- MINDOMO-STYLE CANVAS CONTEXT MENU (Chuột phải trên vùng tạo map) -->
     <div
       v-if="canvasContextMenu.isOpen"
@@ -349,22 +524,73 @@
         top: `${canvasContextMenu.y}px`
       }"
     >
-      <!-- 1. Floating topic (Mở node mới từ chuột phải) -->
-      <button
-        @click="createFloatingTopicFromContextMenu"
-        class="w-full px-3.5 py-2 flex items-center justify-between hover:bg-sky-50 hover:text-sky-700 transition-colors group text-left cursor-pointer"
+      <!-- 1. Menu tạo nhanh node với submenu -->
+      <div 
+        class="relative group/create"
+        @mouseenter="showCreateSubmenu = true"
+        @mouseleave="showCreateSubmenu = false"
       >
-        <div class="flex items-center gap-2.5">
-          <!-- Mindomo Floating Topic Icon (Round rect with plus) -->
-          <div class="w-5 h-3.5 border-[1.5px] border-gray-600 rounded flex items-center justify-center group-hover:border-sky-600">
-            <span class="text-[9px] font-bold leading-none">+</span>
+        <button
+          class="w-full px-3.5 py-2 flex items-center justify-between hover:bg-sky-50 hover:text-sky-700 transition-colors text-left cursor-pointer"
+        >
+          <div class="flex items-center gap-2.5">
+            <div class="w-5 h-3.5 border-[1.5px] border-gray-600 rounded flex items-center justify-center group-hover:border-sky-600">
+              <span class="text-[9px] font-bold leading-none">+</span>
+            </div>
+            <span class="font-medium">Tạo node mới</span>
           </div>
-          <span class="font-medium">Floating topic</span>
+          <span class="text-gray-400 text-xs">›</span>
+        </button>
+
+        <!-- Submenu tạo các loại node -->
+        <div
+          v-if="showCreateSubmenu"
+          class="absolute left-full top-0 ml-1 bg-white rounded-xl shadow-xl border border-gray-200 py-1.5 min-w-[170px] z-50 flex flex-col"
+        >
+          <button 
+            @click="createTypedNodeFromContextMenu('topic')" 
+            class="px-3 py-1.5 text-left text-xs flex items-center gap-2 hover:bg-sky-50 hover:text-sky-700 cursor-pointer"
+          >
+            <Type class="w-3.5 h-3.5 text-gray-500" />
+            <span>Topic thường</span>
+          </button>
+          <button 
+            @click="createTypedNodeFromContextMenu('text')" 
+            class="px-3 py-1.5 text-left text-xs flex items-center gap-2 hover:bg-sky-50 hover:text-sky-700 cursor-pointer"
+          >
+            <FileText class="w-3.5 h-3.5 text-sky-600" />
+            <span>Box văn bản</span>
+          </button>
+          <button 
+            @click="createTypedNodeFromContextMenu('image')" 
+            class="px-3 py-1.5 text-left text-xs flex items-center gap-2 hover:bg-sky-50 hover:text-sky-700 cursor-pointer"
+          >
+            <ImageIcon class="w-3.5 h-3.5 text-emerald-600" />
+            <span>Box hình ảnh</span>
+          </button>
+          <button 
+            @click="createTypedNodeFromContextMenu('video')" 
+            class="px-3 py-1.5 text-left text-xs flex items-center gap-2 hover:bg-sky-50 hover:text-sky-700 cursor-pointer"
+          >
+            <Video class="w-3.5 h-3.5 text-rose-600" />
+            <span>Box video</span>
+          </button>
+          <button 
+            @click="createTypedNodeFromContextMenu('card')" 
+            class="px-3 py-1.5 text-left text-xs flex items-center gap-2 hover:bg-sky-50 hover:text-sky-700 cursor-pointer"
+          >
+            <CreditCard class="w-3.5 h-3.5 text-purple-600" />
+            <span>Card thông tin</span>
+          </button>
+          <button 
+            @click="createTypedNodeFromContextMenu('link')" 
+            class="px-3 py-1.5 text-left text-xs flex items-center gap-2 hover:bg-sky-50 hover:text-sky-700 cursor-pointer"
+          >
+            <ExternalLink class="w-3.5 h-3.5 text-blue-600" />
+            <span>Box liên kết (Link)</span>
+          </button>
         </div>
-        <span class="text-[10px] font-mono text-gray-400 bg-gray-100 group-hover:bg-sky-100 group-hover:text-sky-600 px-1.5 py-0.5 rounded border border-gray-200">
-          CTRL+2xCLICK
-        </span>
-      </button>
+      </div>
 
       <!-- 2. Customize Theme -->
       <button
@@ -481,20 +707,39 @@
 import { ref, computed, reactive } from 'vue'
 import { 
   store, selectNode, deselectAll, updateNodePosition, moveSelectedNodes, updateNodeLabel, 
-  addNodeNearSelected, addFloatingTopic, deleteSelectedNode, duplicateSelectedNode, 
+  addNodeNearSelected, addFloatingTopic, addNodeWithType, changeNodeType, updateNodeProps,
+  deleteSelectedNode, duplicateSelectedNode, 
   toggleTaskComplete, undo, redo, saveToAPI, selectEdge, 
   relationCustomizerState, closeRelationCustomizer, updateEdgeControlPoint, 
   updateEdgeProps, selectNodesInBox, deleteEdge, exportToJSON
 } from '../store/mindmapStore.js'
 import RelationCustomizer from './RelationCustomizer.vue'
+import NodeEditorModal from './NodeEditorModal.vue'
 import { 
   Plus, FileText, Smile, CheckSquare, GitBranch, Trash2, Copy,
-  Palette, Paintbrush, Maximize2, Upload, Printer
+  Palette, Paintbrush, Maximize2, Upload, Printer,
+  Type, Image as ImageIcon, Video, CreditCard, ExternalLink,
+  Sliders, LayoutGrid
 } from 'lucide-vue-next'
 
 const boardRef = ref(null)
 const zoom = ref(1.0)
 const pan = ref({ x: 40, y: -40 })
+
+// Type Switcher & Node Editor Modal state
+const showTypeSwitcher = ref(false)
+const isNodeEditorOpen = ref(false)
+const editingNode = ref(null)
+const showCreateSubmenu = ref(false)
+
+const typeOptions = [
+  { value: 'topic', label: 'Topic thường', icon: Type },
+  { value: 'text', label: 'Box văn bản', icon: FileText },
+  { value: 'image', label: 'Box ảnh', icon: ImageIcon },
+  { value: 'video', label: 'Box video', icon: Video },
+  { value: 'card', label: 'Card thông tin', icon: CreditCard },
+  { value: 'link', label: 'Liên kết Web', icon: ExternalLink }
+]
 
 // Canvas Context Menu (Chuột phải trên canvas Mindomo)
 const canvasContextMenu = reactive({
@@ -559,6 +804,72 @@ function getStrokeDasharray(style) {
   return '5,4'
 }
 
+function getNodeDimensions(node) {
+  if (!node) return { width: 100, height: 36 }
+  switch (node.type) {
+    case 'text':
+      return { width: 220, height: 110 }
+    case 'image':
+      return { width: 220, height: 160 }
+    case 'video':
+      return { width: 260, height: 180 }
+    case 'card': {
+      const fieldCount = (node.fields && node.fields.length) || 0
+      return { width: 240, height: Math.max(90, 80 + fieldCount * 22) }
+    }
+    case 'link':
+      return { width: 220, height: 60 }
+    default: // topic
+      return { width: 110, height: 36 }
+  }
+}
+
+function formatDomain(url) {
+  if (!url) return ''
+  try {
+    const parsed = new URL(url.startsWith('http') ? url : `https://${url}`)
+    return parsed.hostname
+  } catch (e) {
+    return url
+  }
+}
+
+function openLink(url) {
+  if (!url) return
+  const targetUrl = url.startsWith('http') ? url : `https://${url}`
+  window.open(targetUrl, '_blank')
+}
+
+function getYouTubeEmbedUrl(url) {
+  if (!url) return ''
+  const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/)
+  if (shortMatch) return `https://www.youtube.com/embed/${shortMatch[1]}`
+  
+  const longMatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/)
+  if (longMatch) return `https://www.youtube.com/embed/${longMatch[1]}`
+
+  if (url.includes('youtube.com/embed/')) return url
+  return url
+}
+
+function openNodeEditor(node) {
+  editingNode.value = node || selectedNode.value
+  isNodeEditorOpen.value = true
+  showTypeSwitcher.value = false
+}
+
+function closeNodeEditor() {
+  isNodeEditorOpen.value = false
+  editingNode.value = null
+}
+
+function handleNodeTypeChange(type) {
+  if (selectedNode.value) {
+    changeNodeType(selectedNode.value.id, type)
+    showTypeSwitcher.value = false
+  }
+}
+
 // Calculate paths with full shapes & control points
 const edgePaths = computed(() => {
   const nodeMap = new Map(store.graph.nodes.map(n => [n.id, n]))
@@ -567,10 +878,13 @@ const edgePaths = computed(() => {
     const t = nodeMap.get(edge.target)
     if (!s || !t) return null
 
-    const sx = s.x + 50
-    const sy = s.y + 18
-    const tx = t.x + 10
-    const ty = t.y + 18
+    const sDim = getNodeDimensions(s)
+    const tDim = getNodeDimensions(t)
+
+    const sx = s.x + sDim.width
+    const sy = s.y + sDim.height / 2
+    const tx = t.x
+    const ty = t.y + tDim.height / 2
 
     let d = ''
     let midX = (sx + tx) / 2
@@ -591,16 +905,16 @@ const edgePaths = computed(() => {
       d = `M ${sx} ${sy} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${tx + 20} ${ty + 20}`
       midX = (sx + tx) / 2
     } else if (shape === 'straight') {
-      d = `M ${sx + 40} ${sy} L ${tx} ${ty}`
+      d = `M ${sx} ${sy} L ${tx} ${ty}`
     } else if (shape === 'angled') {
-      d = `M ${sx + 40} ${sy} L ${midX} ${sy} L ${midX} ${ty} L ${tx} ${ty}`
+      d = `M ${sx} ${sy} L ${midX} ${sy} L ${midX} ${ty} L ${tx} ${ty}`
     } else if (shape === 'step') {
-      d = `M ${sx + 40} ${sy} L ${midX} ${sy} L ${tx} ${ty}`
+      d = `M ${sx} ${sy} L ${midX} ${sy} L ${tx} ${ty}`
     } else if (shape === 'wave') {
-      d = `M ${sx + 40} ${sy} Q ${cp1x} ${cp1y}, ${midX} ${midY} T ${tx} ${ty}`
+      d = `M ${sx} ${sy} Q ${cp1x} ${cp1y}, ${midX} ${midY} T ${tx} ${ty}`
     } else {
       // Curved Bézier (Default Mindomo)
-      d = `M ${sx + 40} ${sy} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${tx} ${ty}`
+      d = `M ${sx} ${sy} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${tx} ${ty}`
       midX = (cp1x + cp2x) / 2
       midY = (cp1y + cp2y) / 2
     }
@@ -608,7 +922,7 @@ const edgePaths = computed(() => {
     return {
       ...edge,
       d,
-      sx: sx + 40,
+      sx,
       sy,
       tx,
       ty,
@@ -881,13 +1195,18 @@ function onCanvasContextMenu(e) {
 function closeCanvasContextMenu() {
   canvasContextMenu.isOpen = false
   showBgSubmenu.value = false
+  showCreateSubmenu.value = false
 }
 
 function createFloatingTopicFromContextMenu() {
+  createTypedNodeFromContextMenu('topic')
+}
+
+function createTypedNodeFromContextMenu(type) {
   const x = canvasContextMenu.canvasX
   const y = canvasContextMenu.canvasY
   closeCanvasContextMenu()
-  addFloatingTopic(x, y, 'Floating Topic')
+  addNodeWithType(x, y, type)
 }
 
 // CTRL + 2xCLICK shortcut on canvas to create floating topic (Mindomo feature)
