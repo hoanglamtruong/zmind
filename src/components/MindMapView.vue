@@ -114,56 +114,106 @@
           />
 
           <!-- INTERACTIVE 2 BÉZIER CONTROL HANDLES ("2 RÂU ĐIỀU HƯỚNG") -->
-          <template v-if="relationCustomizerState.edgeId === edge.id">
-            <!-- Râu 1: Source Control Line -->
+          <template v-if="relationCustomizerState.edgeId === edge.id && relationCustomizerState.showCurveHandles && (!edge.shape || edge.shape === 'curved' || edge.shape === 'wave')">
+            <!-- Guideline 1: Source Control Line -->
             <line 
               :x1="edge.sx" 
               :y1="edge.sy" 
               :x2="edge.cp1x" 
               :y2="edge.cp1y" 
-              stroke="#0284c7" 
-              stroke-width="1.2" 
+              stroke="#38bdf8" 
+              stroke-width="1.5" 
               stroke-dasharray="3,3" 
+              class="pointer-events-none opacity-80"
             />
 
-            <!-- Râu 2: Target Control Line -->
+            <!-- Guideline 2: Target Control Line -->
             <line 
               :x1="edge.tx" 
               :y1="edge.ty" 
               :x2="edge.cp2x" 
               :y2="edge.cp2y" 
-              stroke="#0284c7" 
-              stroke-width="1.2" 
+              stroke="#38bdf8" 
+              stroke-width="1.5" 
               stroke-dasharray="3,3" 
+              class="pointer-events-none opacity-80"
             />
 
-            <!-- Handle 1 Square (Kéo râu 1) -->
-            <rect 
-              :x="edge.cp1x - 5" 
-              :y="edge.cp1y - 5" 
-              width="10" 
-              height="10" 
-              fill="white" 
-              stroke="#0284c7" 
-              stroke-width="2" 
-              class="cursor-crosshair hover:scale-125 transition-transform"
-              @mousedown.stop="startDragControlPoint(edge.id, 1, $event)"
-              title="Kéo râu 1 để chỉnh hướng và độ cong đầu nguồn"
-            />
+            <!-- Node attachment dots -->
+            <circle :cx="edge.sx" :cy="edge.sy" r="3.5" fill="#0284c7" stroke="#ffffff" stroke-width="1" class="pointer-events-none" />
+            <circle :cx="edge.tx" :cy="edge.ty" r="3.5" fill="#0284c7" stroke="#ffffff" stroke-width="1" class="pointer-events-none" />
 
-            <!-- Handle 2 Square (Kéo râu 2) -->
-            <rect 
-              :x="edge.cp2x - 5" 
-              :y="edge.cp2y - 5" 
-              width="10" 
-              height="10" 
-              fill="white" 
-              stroke="#0284c7" 
-              stroke-width="2" 
-              class="cursor-crosshair hover:scale-125 transition-transform"
-              @mousedown.stop="startDragControlPoint(edge.id, 2, $event)"
-              title="Kéo râu 2 để chỉnh hướng và độ cong đầu đích"
-            />
+            <!-- Handle 1 Circle (Kéo râu 1) -->
+            <g class="cursor-grab active:cursor-grabbing">
+              <!-- Big invisible touch/click hit area -->
+              <circle 
+                :cx="edge.cp1x" 
+                :cy="edge.cp1y" 
+                r="16" 
+                fill="transparent"
+                @mousedown.stop="startDragControlPoint(edge.id, 1, $event)"
+                @dblclick.stop="resetSingleControlPoint(edge.id, 1)"
+              >
+                <title>Kéo để uốn cong đầu nguồn (Nhấp đúp để đặt lại mặc định)</title>
+              </circle>
+              <!-- Outer ring -->
+              <circle 
+                :cx="edge.cp1x" 
+                :cy="edge.cp1y" 
+                r="8" 
+                fill="none" 
+                stroke="#0284c7" 
+                stroke-width="1.5" 
+                stroke-dasharray="2,2" 
+                class="pointer-events-none opacity-70"
+              />
+              <!-- Solid pin center -->
+              <circle 
+                :cx="edge.cp1x" 
+                :cy="edge.cp1y" 
+                r="5.5" 
+                fill="#0284c7" 
+                stroke="#ffffff" 
+                stroke-width="2" 
+                class="pointer-events-none hover:scale-125 transition-transform"
+              />
+            </g>
+
+            <!-- Handle 2 Circle (Kéo râu 2) -->
+            <g class="cursor-grab active:cursor-grabbing">
+              <!-- Big invisible touch/click hit area -->
+              <circle 
+                :cx="edge.cp2x" 
+                :cy="edge.cp2y" 
+                r="16" 
+                fill="transparent"
+                @mousedown.stop="startDragControlPoint(edge.id, 2, $event)"
+                @dblclick.stop="resetSingleControlPoint(edge.id, 2)"
+              >
+                <title>Kéo để uốn cong đầu đích (Nhấp đúp để đặt lại mặc định)</title>
+              </circle>
+              <!-- Outer ring -->
+              <circle 
+                :cx="edge.cp2x" 
+                :cy="edge.cp2y" 
+                r="8" 
+                fill="none" 
+                stroke="#0284c7" 
+                stroke-width="1.5" 
+                stroke-dasharray="2,2" 
+                class="pointer-events-none opacity-70"
+              />
+              <!-- Solid pin center -->
+              <circle 
+                :cx="edge.cp2x" 
+                :cy="edge.cp2y" 
+                r="5.5" 
+                fill="#0284c7" 
+                stroke="#ffffff" 
+                stroke-width="2" 
+                class="pointer-events-none hover:scale-125 transition-transform"
+              />
+            </g>
           </template>
         </g>
 
@@ -784,6 +834,7 @@ import {
   deleteSelectedNode, duplicateSelectedNode, 
   toggleTaskComplete, undo, redo, saveToAPI, selectEdge, 
   relationCustomizerState, closeRelationCustomizer, updateEdgeControlPoint, 
+  resetSingleControlPoint, resetEdgeCurve,
   updateEdgeProps, selectNodesInBox, deleteEdge, exportToJSON
 } from '../store/mindmapStore.js'
 import RelationCustomizer from './RelationCustomizer.vue'
@@ -851,6 +902,7 @@ const dragCanvasStart = ref({ x: 0, y: 0 })
 const draggingNode = ref(null)
 const dragStartMouse = { clientX: 0, clientY: 0 }
 const initialNodePositions = new Map()
+const initialEdgeControlPoints = new Map()
 
 const draggingControlPoint = ref(null) // { edgeId, cpIndex }
 
@@ -1191,6 +1243,17 @@ function startDragNode(node, e) {
   } else {
     initialNodePositions.set(node.id, { x: node.x, y: node.y })
   }
+
+  // Synchronize edge control points so they don't break or detach when nodes move
+  initialEdgeControlPoints.clear()
+  store.graph.edges.forEach(edge => {
+    if (edge.cp1 || edge.cp2) {
+      initialEdgeControlPoints.set(edge.id, {
+        cp1: edge.cp1 ? { ...edge.cp1 } : null,
+        cp2: edge.cp2 ? { ...edge.cp2 } : null
+      })
+    }
+  })
 }
 
 function onMouseMove(e) {
@@ -1199,13 +1262,14 @@ function onMouseMove(e) {
     return
   }
 
-  if (isMarqueeSelecting.value) {
-    const boardRect = boardRef.value?.getBoundingClientRect() || { left: 0, top: 0 }
-    const cX = e.clientX - boardRect.left
-    const cY = e.clientY - boardRect.top
-    const canvasX = (cX - pan.value.x) / zoom.value
-    const canvasY = (cY - pan.value.y) / zoom.value
+  // Pre-calculate accurate canvas coordinates taking board offset and zoom into account
+  const boardRect = boardRef.value?.getBoundingClientRect() || { left: 0, top: 0 }
+  const cX = e.clientX - boardRect.left
+  const cY = e.clientY - boardRect.top
+  const canvasX = (cX - pan.value.x) / zoom.value
+  const canvasY = (cY - pan.value.y) / zoom.value
 
+  if (isMarqueeSelecting.value) {
     marqueeCurrent.value = { clientX: cX, clientY: cY, canvasX, canvasY }
 
     // Realtime update selected nodes in box
@@ -1220,8 +1284,6 @@ function onMouseMove(e) {
   }
 
   if (draggingControlPoint.value) {
-    const canvasX = (e.clientX - pan.value.x) / zoom.value
-    const canvasY = (e.clientY - pan.value.y) / zoom.value
     updateEdgeControlPoint(
       draggingControlPoint.value.edgeId,
       draggingControlPoint.value.cpIndex,
@@ -1233,8 +1295,8 @@ function onMouseMove(e) {
 
   if (connectingSource.value) {
     currentMousePos.value = {
-      x: (e.clientX - pan.value.x) / zoom.value,
-      y: (e.clientY - pan.value.y) / zoom.value
+      x: canvasX,
+      y: canvasY
     }
     return
   }
@@ -1248,6 +1310,21 @@ function onMouseMove(e) {
       if (n) {
         n.x = Math.round(initPos.x + dx)
         n.y = Math.round(initPos.y + dy)
+      }
+    })
+
+    // Move associated control points with the nodes being dragged
+    initialEdgeControlPoints.forEach((initCps, edgeId) => {
+      const edge = store.graph.edges.find(e => e.id === edgeId)
+      if (edge) {
+        if (initCps.cp1 && initialNodePositions.has(edge.source)) {
+          edge.cp1.x = Math.round(initCps.cp1.x + dx)
+          edge.cp1.y = Math.round(initCps.cp1.y + dy)
+        }
+        if (initCps.cp2 && initialNodePositions.has(edge.target)) {
+          edge.cp2.x = Math.round(initCps.cp2.x + dx)
+          edge.cp2.y = Math.round(initCps.cp2.y + dy)
+        }
       }
     })
   } 
@@ -1273,6 +1350,7 @@ function onMouseUp() {
     saveToAPI()
     draggingNode.value = null
     initialNodePositions.clear()
+    initialEdgeControlPoints.clear()
   }
 
   isDraggingCanvas.value = false

@@ -8,6 +8,15 @@
     }"
     @mousedown.stop
   >
+    <!-- Draggable Header Handle Bar -->
+    <div 
+      class="w-full py-1 bg-gray-100 hover:bg-gray-200/80 border-b border-gray-200 flex items-center justify-center cursor-move transition-colors group"
+      @mousedown="startDragModal"
+      title="Giữ chuột và kéo để di chuyển bảng tùy chỉnh"
+    >
+      <div class="w-8 h-1 rounded-full bg-gray-300 group-hover:bg-gray-400 transition-colors"></div>
+    </div>
+
     <!-- Header: 3 Tabs (Kiểu nét, Nhãn & Link, Nâng cao) -->
     <div class="grid grid-cols-3 border-b border-gray-200 bg-gray-50/50">
       <!-- Tab 1: Line Style -->
@@ -393,23 +402,68 @@
     </div>
 
     <!-- TAB 3: FORMAT (F) -->
-    <div v-else-if="relationCustomizerState.activeTab === 'format'" class="p-5 space-y-4">
+    <div v-else-if="relationCustomizerState.activeTab === 'format'" class="p-4 space-y-3.5">
       <div class="text-xs font-semibold text-gray-700">Tùy chọn nâng cao:</div>
       <div class="space-y-2">
+        <!-- Toggle Curve Control Handles -->
+        <div class="flex items-center justify-between p-2.5 bg-gray-50 border border-gray-200 rounded-xl">
+          <div class="flex flex-col">
+            <span class="text-xs font-semibold text-gray-700">Thanh uốn cong đường nối</span>
+            <span class="text-[10px] text-gray-400">Hiện 2 điểm tròn xanh để kéo uốn cong</span>
+          </div>
+          <button 
+            type="button"
+            @click="relationCustomizerState.showCurveHandles = !relationCustomizerState.showCurveHandles"
+            :class="[
+              'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+              relationCustomizerState.showCurveHandles ? 'bg-sky-500' : 'bg-gray-300'
+            ]"
+            title="Bật/Tắt hiển thị thanh điều khiển uốn cong trên canvas"
+          >
+            <span 
+              :class="[
+                'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out',
+                relationCustomizerState.showCurveHandles ? 'translate-x-4' : 'translate-x-0'
+              ]"
+            />
+          </button>
+        </div>
+
+        <!-- Reset Curve to Default Button -->
+        <button 
+          @click="resetCurve"
+          class="w-full py-2.5 px-3 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-xl flex items-center justify-between text-xs font-semibold cursor-pointer transition-colors"
+          title="Xóa điểm uốn tùy chỉnh, đưa đường nối về độ cong mượt mặc định"
+        >
+          <div class="flex items-center gap-2">
+            <RotateCcw class="w-3.5 h-3.5 text-sky-600" />
+            <span>Đặt lại đường cong mặc định</span>
+          </div>
+          <span class="text-[10px] bg-white text-sky-600 border border-sky-200 px-1.5 py-0.5 rounded font-mono font-bold">↺ Reset</span>
+        </button>
+
         <button 
           @click="flipDirection"
-          class="w-full py-2 px-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl flex items-center justify-between text-xs font-medium cursor-pointer"
+          class="w-full py-2 px-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl flex items-center justify-between text-xs font-medium cursor-pointer transition-colors"
         >
           <span>Đảo ngược hướng liên kết</span>
           <span class="text-gray-400 font-bold">⇄</span>
         </button>
+      </div>
+
+      <div class="border-t border-gray-100 pt-2 flex items-center justify-between">
+        <button 
+          @click="resetRelation" 
+          class="text-gray-400 hover:text-gray-700 text-xs font-medium hover:underline cursor-pointer"
+        >
+          Khôi phục gốc
+        </button>
 
         <button 
-          @click="resetRelation"
-          class="w-full py-2 px-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl flex items-center justify-between text-xs font-medium cursor-pointer"
+          @click="removeRelation" 
+          class="text-rose-500 hover:text-rose-700 text-xs font-semibold hover:underline cursor-pointer"
         >
-          <span>Đặt lại đường cong mặc định</span>
-          <span class="text-gray-400">↺</span>
+          Xóa đường kết nối
         </button>
       </div>
     </div>
@@ -417,7 +471,7 @@
     <!-- Close button -->
     <button 
       @click="closeRelationCustomizer" 
-      class="absolute top-2.5 right-2.5 text-gray-400 hover:text-gray-700 text-xs font-bold p-1 rounded-md hover:bg-gray-100 cursor-pointer"
+      class="absolute top-2 right-2.5 text-gray-400 hover:text-gray-700 text-xs font-bold p-1 rounded-md hover:bg-gray-100 cursor-pointer"
       title="Đóng"
     >
       ✕
@@ -429,11 +483,41 @@
 import { ref, computed, nextTick } from 'vue'
 import { 
   store, relationCustomizerState, updateEdgeProps, 
-  deleteEdge, resetEdge, closeRelationCustomizer 
+  deleteEdge, resetEdge, resetEdgeCurve, closeRelationCustomizer 
 } from '../store/mindmapStore.js'
-import { Tag, Link as LinkIcon, ExternalLink, Paintbrush, Sliders } from 'lucide-vue-next'
+import { Tag, Link as LinkIcon, ExternalLink, Paintbrush, Sliders, RotateCcw } from 'lucide-vue-next'
 
 const labelInputRef = ref(null)
+
+// Modal Dragging State
+const isDraggingModal = ref(false)
+const modalDragStart = ref({ mouseX: 0, mouseY: 0, posX: 0, posY: 0 })
+
+function startDragModal(e) {
+  isDraggingModal.value = true
+  modalDragStart.value = {
+    mouseX: e.clientX,
+    mouseY: e.clientY,
+    posX: relationCustomizerState.posX,
+    posY: relationCustomizerState.posY
+  }
+  window.addEventListener('mousemove', onDragModalMove)
+  window.addEventListener('mouseup', onDragModalUp)
+}
+
+function onDragModalMove(e) {
+  if (!isDraggingModal.value) return
+  const dx = e.clientX - modalDragStart.value.mouseX
+  const dy = e.clientY - modalDragStart.value.mouseY
+  relationCustomizerState.posX = Math.max(10, Math.min(window.innerWidth - 320, modalDragStart.value.posX + dx))
+  relationCustomizerState.posY = Math.max(50, Math.min(window.innerHeight - 100, modalDragStart.value.posY + dy))
+}
+
+function onDragModalUp() {
+  isDraggingModal.value = false
+  window.removeEventListener('mousemove', onDragModalMove)
+  window.removeEventListener('mouseup', onDragModalUp)
+}
 
 const currentEdge = computed(() => {
   return store.graph.edges.find(e => e.id === relationCustomizerState.edgeId)
@@ -523,6 +607,12 @@ function flipDirection() {
       source: prevTarget,
       target: prevSource
     })
+  }
+}
+
+function resetCurve() {
+  if (currentEdge.value) {
+    resetEdgeCurve(currentEdge.value.id)
   }
 }
 

@@ -533,6 +533,7 @@ export const relationCustomizerState = reactive({
   isOpen: false,
   edgeId: null,
   activeTab: 'line', // 'line' | 'text' | 'format'
+  showCurveHandles: true,
   posX: 400,
   posY: 200
 })
@@ -541,8 +542,19 @@ export function selectEdge(edgeId, event = null) {
   relationCustomizerState.edgeId = edgeId
   relationCustomizerState.isOpen = true
   if (event) {
-    relationCustomizerState.posX = Math.min(window.innerWidth - 320, Math.max(20, event.clientX - 140))
-    relationCustomizerState.posY = Math.min(window.innerHeight - 450, Math.max(60, event.clientY - 200))
+    const modalWidth = 320
+    const modalHeight = 360
+    let x = event.clientX + 35
+    if (x + modalWidth > window.innerWidth - 20) {
+      x = event.clientX - modalWidth - 35
+    }
+    x = Math.max(20, Math.min(window.innerWidth - modalWidth - 20, x))
+
+    let y = event.clientY - 60
+    y = Math.max(70, Math.min(window.innerHeight - modalHeight - 20, y))
+
+    relationCustomizerState.posX = x
+    relationCustomizerState.posY = y
   }
 }
 
@@ -573,6 +585,26 @@ export function resetEdge(edgeId) {
     edge.strokeWidth = 2
     edge.arrow = 'target'
     edge.curvature = 0
+    delete edge.cp1
+    delete edge.cp2
+    saveToAPI()
+  }
+}
+
+export function resetEdgeCurve(edgeId) {
+  const edge = store.graph.edges.find(e => e.id === edgeId)
+  if (edge) {
+    delete edge.cp1
+    delete edge.cp2
+    saveToAPI()
+  }
+}
+
+export function resetSingleControlPoint(edgeId, cpIndex) {
+  const edge = store.graph.edges.find(e => e.id === edgeId)
+  if (edge) {
+    if (cpIndex === 1) delete edge.cp1
+    if (cpIndex === 2) delete edge.cp2
     saveToAPI()
   }
 }

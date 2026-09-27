@@ -4,54 +4,27 @@
     "title": "Zeebee.vn",
     "nodes": [
       {
-        "id": "node_mujszgd2",
-        "label": "Hình ảnh",
-        "color": "#f59e0b",
-        "border": "#d97706",
-        "x": -242,
-        "y": 598,
-        "selected": true,
-        "type": "image",
-        "imageUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80",
-        "caption": "Ảnh minh họa"
-      },
-      {
         "id": "node_mujw326a",
-        "label": "Persona",
+        "label": "User",
         "color": "#10b981",
         "border": "#059669",
-        "x": 33,
-        "y": 288,
+        "x": 4,
+        "y": 334,
         "selected": false,
-        "type": "topic"
-      },
-      {
-        "id": "node_mujw3zvm",
-        "label": "Freelaner",
-        "color": "#f59e0b",
-        "border": "#d97706",
-        "x": 34,
-        "y": 358,
-        "selected": false,
-        "type": "topic"
-      },
-      {
-        "id": "node_mujw4juq",
-        "label": "Owner",
-        "color": "#a855f7",
-        "border": "#7e22ce",
-        "x": 37,
-        "y": 443,
-        "selected": false,
-        "type": "topic",
-        "content": "",
+        "type": "text",
+        "content": "Personal\nFreelancer\nOwner",
         "imageUrl": "",
         "caption": "",
         "videoUrl": "",
         "description": "",
         "status": "",
         "statusColor": "#0284c7",
-        "fields": [],
+        "fields": [
+          {
+            "key": "",
+            "value": ""
+          }
+        ],
         "url": ""
       },
       {
@@ -59,8 +32,8 @@
         "label": "Fp: QCLH",
         "color": "#38bdf8",
         "border": "#0284c7",
-        "x": 414,
-        "y": 224,
+        "x": 455,
+        "y": 205,
         "selected": false,
         "type": "link",
         "content": "Chạy quảng cáo trạm",
@@ -78,8 +51,8 @@
         "label": "Website trạm",
         "color": "#ec4899",
         "border": "#db2777",
-        "x": 409,
-        "y": 343,
+        "x": 445,
+        "y": 349,
         "selected": false,
         "type": "link",
         "content": "Sàn thương mại điện tử long Hải",
@@ -97,8 +70,8 @@
         "label": "FB G: qclh",
         "color": "#a855f7",
         "border": "#7e22ce",
-        "x": 422,
-        "y": 480,
+        "x": 465,
+        "y": 496,
         "selected": false,
         "type": "link",
         "content": "Quảng cáo long hải",
@@ -110,21 +83,61 @@
         "statusColor": "#0284c7",
         "fields": [],
         "url": "https://www.facebook.com/groups/mbsbrvt"
+      },
+      {
+        "id": "node_mujxhnda",
+        "label": "Zeebee Platform",
+        "color": "#a855f7",
+        "border": "#7e22ce",
+        "x": 792,
+        "y": 147,
+        "selected": true,
+        "type": "link",
+        "url": "https://zeebee.vn",
+        "description": "Hệ sinh thái truyền thông & công nghệ"
       }
     ],
     "edges": [
       {
-        "id": "e_mujwo7uz",
+        "id": "e_mujx4alg",
         "source": "node_mujw326a",
         "target": "node_mujw5l7u",
         "color": "#059669",
         "style": "dashed",
         "shape": "curved",
         "strokeWidth": 2,
-        "arrow": "target"
+        "arrow": "target",
+        "label": "",
+        "link": "",
+        "curvature": 0
+      },
+      {
+        "id": "e_mujx4dc3",
+        "source": "node_mujw326a",
+        "target": "node_mujw73y3",
+        "color": "#059669",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target",
+        "curvature": 0
+      },
+      {
+        "id": "e_mujx4f9e",
+        "source": "node_mujw326a",
+        "target": "node_mujwcp05",
+        "color": "#059669",
+        "style": "dashed",
+        "shape": "curved",
+        "strokeWidth": 2,
+        "arrow": "target",
+        "cp2": {
+          "x": 368,
+          "y": 530
+        }
       }
     ],
-    "updatedAt": "2026-09-27T14:20:19.496Z",
-    "selectedNodeId": "node_mujszgd2"
+    "updatedAt": "2026-09-27T14:43:13.546Z",
+    "selectedNodeId": "node_mujxhnda"
   }
 ]
