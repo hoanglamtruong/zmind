@@ -30,7 +30,7 @@
 
     <!-- Canvas Pan/Zoom Layer -->
     <div 
-      class="absolute origin-top-left transition-transform duration-75"
+      :class="['absolute origin-top-left', isDraggingCanvas ? 'transition-none' : 'transition-transform duration-75']"
       :style="{
         transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`
       }"
@@ -90,7 +90,8 @@
             :marker-start="(edge.arrow === 'source' || edge.arrow === 'both') ? `url(#arrow_source_${edge.id})` : 'none'"
             stroke-linecap="round"
             :class="[
-              'cursor-pointer transition-all',
+              'cursor-pointer',
+              draggingNode ? 'transition-none' : 'transition-colors',
               relationCustomizerState.edgeId === edge.id ? 'stroke-[3px] filter drop-shadow' : 'hover:opacity-80'
             ]"
             @click.stop="onEdgeClick(edge.id, $event)"
@@ -214,7 +215,8 @@
         @mousedown.stop="startDragNode(node, $event)"
         @click.stop="onNodeClick(node, $event)"
         :class="[
-          'absolute px-5 py-2 rounded-full cursor-pointer transition-all duration-150 flex items-center justify-center font-semibold text-sm bg-white shadow-sm z-10 select-none group',
+          'absolute px-5 py-2 rounded-full cursor-pointer flex items-center justify-center font-semibold text-sm bg-white shadow-sm z-10 select-none group',
+          draggingNode ? 'transition-none pointer-events-auto' : 'transition-shadow duration-150',
           node.selected 
             ? 'ring-2 ring-[#0284c7] ring-offset-2 ring-offset-white shadow-lg scale-102 bg-sky-50/30' 
             : 'hover:shadow-md'
@@ -277,9 +279,9 @@
 
       <!-- FLOATING CONTEXT MENU (Below Selected Node or Multi-Selection Toolbar) -->
       <div 
-        v-if="selectedNode"
+        v-if="selectedNode && !draggingNode"
         @mousedown.stop
-        class="absolute bg-white rounded-2xl shadow-xl border border-gray-200 py-1 px-2 flex items-center space-x-1 z-40 transition-all duration-150 animate-in fade-in"
+        class="absolute bg-white rounded-2xl shadow-xl border border-gray-200 py-1 px-2 flex items-center space-x-1 z-40 transition-none animate-in fade-in"
         :style="{
           left: `${selectedNode.x - 30}px`,
           top: `${selectedNode.y + 48}px`
@@ -528,7 +530,8 @@ const isDraggingCanvas = ref(false)
 const dragCanvasStart = ref({ x: 0, y: 0 })
 
 const draggingNode = ref(null)
-const lastDragMousePos = ref({ x: 0, y: 0 })
+const dragStartMouse = { clientX: 0, clientY: 0 }
+const initialNodePositions = new Map()
 
 const draggingControlPoint = ref(null) // { edgeId, cpIndex }
 
@@ -728,9 +731,17 @@ function startDragNode(node, e) {
   }
 
   draggingNode.value = node
-  lastDragMousePos.value = {
-    x: e.clientX / zoom.value,
-    y: e.clientY / zoom.value
+  dragStartMouse.clientX = e.clientX
+  dragStartMouse.clientY = e.clientY
+
+  initialNodePositions.clear()
+  const selectedNodes = store.graph.nodes.filter(n => n.selected)
+  if (selectedNodes.length > 1) {
+    selectedNodes.forEach(n => {
+      initialNodePositions.set(n.id, { x: n.x, y: n.y })
+    })
+  } else {
+    initialNodePositions.set(node.id, { x: node.x, y: node.y })
   }
 }
 
@@ -776,23 +787,16 @@ function onMouseMove(e) {
   }
 
   if (draggingNode.value) {
-    const curX = e.clientX / zoom.value
-    const curY = e.clientY / zoom.value
-    const deltaX = Math.round(curX - lastDragMousePos.value.x)
-    const deltaY = Math.round(curY - lastDragMousePos.value.y)
+    const dx = (e.clientX - dragStartMouse.clientX) / zoom.value
+    const dy = (e.clientY - dragStartMouse.clientY) / zoom.value
 
-    if (deltaX !== 0 || deltaY !== 0) {
-      const selectedNodes = store.graph.nodes.filter(n => n.selected)
-      if (selectedNodes.length > 1) {
-        // Move all selected nodes together
-        moveSelectedNodes(deltaX, deltaY)
-      } else {
-        // Move single dragged node
-        draggingNode.value.x += deltaX
-        draggingNode.value.y += deltaY
+    initialNodePositions.forEach((initPos, id) => {
+      const n = store.graph.nodes.find(node => node.id === id)
+      if (n) {
+        n.x = Math.round(initPos.x + dx)
+        n.y = Math.round(initPos.y + dy)
       }
-      lastDragMousePos.value = { x: curX, y: curY }
-    }
+    })
   } 
   else if (isDraggingCanvas.value) {
     pan.value = {
@@ -815,6 +819,7 @@ function onMouseUp() {
   if (draggingNode.value) {
     saveToAPI()
     draggingNode.value = null
+    initialNodePositions.clear()
   }
 
   isDraggingCanvas.value = false
