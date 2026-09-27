@@ -4,35 +4,29 @@
     "title": "Zeebee.vn",
     "nodes": [
       {
-        "id": "node_mu20hg1a",
-        "label": "Floating Topic",
-        "color": "#10b981",
-        "border": "#059669",
-        "x": 314,
-        "y": 303,
+        "id": "node_mujso3ut",
+        "label": "New Topic",
+        "color": "#38bdf8",
+        "border": "#0284c7",
+        "x": 484,
+        "y": 220,
         "selected": true
-      }
-    ],
-    "edges": [],
-    "updatedAt": "2026-09-15T03:23:00.124Z",
-    "selectedNodeId": "node_mu20hg1a"
-  },
-  {
-    "id": "assitand_default",
-    "title": "Assitand",
-    "nodes": [
+      },
       {
-        "id": "assitand",
-        "label": "Assitand",
-        "color": "#f87171",
-        "border": "#ef4444",
-        "x": 216,
-        "y": 234,
-        "selected": true
+        "id": "node_mujszgd2",
+        "label": "Hình ảnh",
+        "color": "#f59e0b",
+        "border": "#d97706",
+        "x": 524,
+        "y": 420,
+        "selected": false,
+        "type": "image",
+        "imageUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80",
+        "caption": "Ảnh minh họa"
       }
     ],
     "edges": [],
-    "updatedAt": "2026-09-15T03:23:15.987Z",
-    "selectedNodeId": "assitand"
+    "updatedAt": "2026-09-27T12:38:40.642Z",
+    "selectedNodeId": "node_mujso3ut"
   }
 ]

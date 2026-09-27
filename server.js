@@ -15,37 +15,13 @@ app.use(cors())
 app.use(express.json({ limit: '20mb' }))
 
 const defaultMap = {
-  id: 'assitand_default',
-  title: 'Assitand',
+  id: 'map_default',
+  title: 'Dự án mới',
   updatedAt: new Date().toISOString(),
   nodes: [
-    { id: 'assitand', label: 'Assitand', color: '#f87171', border: '#ef4444', x: 120, y: 350, selected: true },
-    { id: 'biz', label: 'Biz', color: '#10b981', border: '#059669', x: 380, y: 190 },
-    { id: 'hr', label: 'HR', color: '#f59e0b', border: '#d97706', x: 380, y: 350 },
-    { id: 'fin', label: 'Fin', color: '#ec4899', border: '#db2777', x: 380, y: 490 },
-    { id: 'cooker', label: 'Cooker', color: '#34d399', border: '#10b981', x: 570, y: 200 },
-    { id: 'marketer', label: 'Marketer', color: '#38bdf8', border: '#0284c7', x: 640, y: 290 },
-    { id: 'seller', label: 'Seller', color: '#c084fc', border: '#9333ea', x: 710, y: 390 },
-    { id: 'operator', label: 'Operator', color: '#f87171', border: '#e11d48', x: 780, y: 520 },
-    { id: 'customer', label: 'Customer', color: '#a16207', border: '#78350f', x: 920, y: 380 }
+    { id: 'node_root', label: 'Chủ đề chính', color: '#38bdf8', border: '#0284c7', x: 400, y: 300, selected: true }
   ],
-  edges: [
-    { id: 'e1', source: 'assitand', target: 'biz', color: '#10b981', style: 'dashed' },
-    { id: 'e2', source: 'assitand', target: 'hr', color: '#f59e0b', style: 'dashed' },
-    { id: 'e3', source: 'assitand', target: 'fin', color: '#ec4899', style: 'dashed' },
-    { id: 'e4', source: 'biz', target: 'cooker', color: '#10b981', style: 'dashed' },
-    { id: 'e5', source: 'biz', target: 'marketer', color: '#0284c7', style: 'dashed' },
-    { id: 'e6', source: 'hr', target: 'marketer', color: '#f59e0b', style: 'dashed' },
-    { id: 'e7', source: 'hr', target: 'seller', color: '#f59e0b', style: 'dashed' },
-    { id: 'e8', source: 'hr', target: 'operator', color: '#f59e0b', style: 'dashed' },
-    { id: 'e9', source: 'fin', target: 'seller', color: '#ec4899', style: 'dashed' },
-    { id: 'e10', source: 'fin', target: 'operator', color: '#ec4899', style: 'dashed' },
-    { id: 'e11', source: 'cooker', target: 'customer', color: '#10b981', style: 'dashed' },
-    { id: 'e12', source: 'marketer', target: 'customer', color: '#0284c7', style: 'dashed' },
-    { id: 'e13', source: 'seller', target: 'customer', color: '#9333ea', style: 'dashed' },
-    { id: 'e14', source: 'operator', target: 'customer', color: '#ef4444', style: 'dashed' },
-    { id: 'e15', source: 'customer', target: 'assitand', color: '#78350f', style: 'solid', strokeWidth: 3, arc: -120 }
-  ]
+  edges: []
 }
 
 function readData() {
@@ -120,7 +96,7 @@ app.put('/api/maps/:id', (req, res) => {
   if (index === -1) {
     const createdMap = {
       id: req.params.id,
-      title: req.body.title || 'Assitand',
+      title: req.body.title || 'Dự án mới',
       nodes: req.body.nodes || [],
       edges: req.body.edges || [],
       updatedAt: new Date().toISOString()

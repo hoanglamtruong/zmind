@@ -244,7 +244,7 @@ import { ref, onMounted } from 'vue'
 import { 
   store, undo, redo, saveToAPI, exportToJSON, importFromJSON, 
   updateNodeColor, createNewMapOnAPI, fetchMapsList, openMap, 
-  openDashboard, openJsonEditorForMap 
+  openDashboard, openJsonEditorForMap, initStore 
 } from '../store/mindmapStore.js'
 import { 
   ArrowLeft, ChevronDown, Menu, Undo2, Redo2, 
@@ -269,8 +269,7 @@ const colorOptions = [
 ]
 
 onMounted(() => {
-  fetchMapsList()
-  saveToAPI()
+  initStore()
 })
 
 function switchMap(id) {
@@ -335,7 +334,7 @@ function createNewMap() {
 }
 
 function resetToDefault() {
-  if (confirm('Bạn có chắc muốn khôi phục về sơ đồ mẫu Assitand không?')) {
+  if (confirm('Bạn có chắc muốn tải lại trang sơ đồ không?')) {
     window.location.reload()
   }
 }

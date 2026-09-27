@@ -1,45 +1,17 @@
 import { reactive } from 'vue'
 
-const DEFAULT_MAP_ID = 'assitand_default'
-
 export const store = reactive({
   activeTab: 'mindmap', // 'mindmap' | 'outline' | 'gantt'
-  currentMapId: DEFAULT_MAP_ID,
+  currentMapId: localStorage.getItem('zmind_current_map_id') || '',
   isSaving: false,
   lastSaved: null,
   mapList: [],
   
   graph: {
-    title: 'Assitand',
-    selectedNodeId: 'assitand',
-    nodes: [
-      { id: 'assitand', label: 'Assitand', color: '#f87171', border: '#ef4444', x: 120, y: 350, selected: true },
-      { id: 'biz', label: 'Biz', color: '#10b981', border: '#059669', x: 380, y: 190 },
-      { id: 'hr', label: 'HR', color: '#f59e0b', border: '#d97706', x: 380, y: 350 },
-      { id: 'fin', label: 'Fin', color: '#ec4899', border: '#db2777', x: 380, y: 490 },
-      { id: 'cooker', label: 'Cooker', color: '#34d399', border: '#10b981', x: 570, y: 200 },
-      { id: 'marketer', label: 'Marketer', color: '#38bdf8', border: '#0284c7', x: 640, y: 290 },
-      { id: 'seller', label: 'Seller', color: '#c084fc', border: '#9333ea', x: 710, y: 390 },
-      { id: 'operator', label: 'Operator', color: '#f87171', border: '#e11d48', x: 780, y: 520 },
-      { id: 'customer', label: 'Customer', color: '#a16207', border: '#78350f', x: 920, y: 380 }
-    ],
-    edges: [
-      { id: 'e1', source: 'assitand', target: 'biz', color: '#10b981', style: 'dashed' },
-      { id: 'e2', source: 'assitand', target: 'hr', color: '#f59e0b', style: 'dashed' },
-      { id: 'e3', source: 'assitand', target: 'fin', color: '#ec4899', style: 'dashed' },
-      { id: 'e4', source: 'biz', target: 'cooker', color: '#10b981', style: 'dashed' },
-      { id: 'e5', source: 'biz', target: 'marketer', color: '#0284c7', style: 'dashed' },
-      { id: 'e6', source: 'hr', target: 'marketer', color: '#f59e0b', style: 'dashed' },
-      { id: 'e7', source: 'hr', target: 'seller', color: '#f59e0b', style: 'dashed' },
-      { id: 'e8', source: 'hr', target: 'operator', color: '#f59e0b', style: 'dashed' },
-      { id: 'e9', source: 'fin', target: 'seller', color: '#ec4899', style: 'dashed' },
-      { id: 'e10', source: 'fin', target: 'operator', color: '#ec4899', style: 'dashed' },
-      { id: 'e11', source: 'cooker', target: 'customer', color: '#10b981', style: 'dashed' },
-      { id: 'e12', source: 'marketer', target: 'customer', color: '#0284c7', style: 'dashed' },
-      { id: 'e13', source: 'seller', target: 'customer', color: '#9333ea', style: 'dashed' },
-      { id: 'e14', source: 'operator', target: 'customer', color: '#ef4444', style: 'dashed' },
-      { id: 'e15', source: 'customer', target: 'assitand', color: '#78350f', style: 'solid', strokeWidth: 3, arc: -120 }
-    ]
+    title: 'Dự án mới',
+    selectedNodeId: null,
+    nodes: [],
+    edges: []
   },
 
   // Modal states
@@ -347,12 +319,12 @@ export function deleteSelectedNode() {
   const selectedNodes = store.graph.nodes.filter(n => n.selected)
   if (selectedNodes.length === 0) {
     const id = store.graph.selectedNodeId
-    if (!id || id === 'assitand') return
-    selectedNodes.push(store.graph.nodes.find(n => n.id === id))
+    if (!id) return
+    const found = store.graph.nodes.find(n => n.id === id)
+    if (found) selectedNodes.push(found)
   }
   
-  // Filter out assitand root if user wants to keep root, or delete
-  const deleteIds = new Set(selectedNodes.map(n => n.id).filter(id => id !== 'assitand'))
+  const deleteIds = new Set(selectedNodes.map(n => n.id))
   if (deleteIds.size === 0) return
 
   snapshot()
@@ -454,6 +426,7 @@ export function importFromJSON(fileContent) {
 
 // 7. REST API INTEGRATION
 export async function saveToAPI() {
+  if (!store.currentMapId) return
   store.isSaving = true
   try {
     const res = await fetch(`/api/maps/${store.currentMapId}`, {
@@ -480,13 +453,15 @@ export async function fetchMapsList() {
     const json = await res.json()
     if (json.success) {
       store.mapList = json.data
+      return json.data
     }
   } catch (err) {
     console.warn('Fetch maps error:', err)
   }
+  return []
 }
 
-export async function createNewMapOnAPI(title = 'New Mind Map') {
+export async function createNewMapOnAPI(title = 'Dự án mới') {
   try {
     const res = await fetch('/api/maps', {
       method: 'POST',
@@ -497,10 +472,23 @@ export async function createNewMapOnAPI(title = 'New Mind Map') {
     if (json.success) {
       store.currentMapId = json.data.id
       store.graph = json.data
+      localStorage.setItem('zmind_current_map_id', json.data.id)
       fetchMapsList()
     }
   } catch (err) {
     console.error('Create map error:', err)
+  }
+}
+
+export async function initStore() {
+  const maps = await fetchMapsList()
+  const savedId = localStorage.getItem('zmind_current_map_id')
+  if (savedId && maps.some(m => m.id === savedId)) {
+    await openMap(savedId)
+  } else if (maps.length > 0) {
+    await openMap(maps[0].id)
+  } else {
+    await createNewMapOnAPI('Dự án mới')
   }
 }
 
@@ -532,7 +520,7 @@ export function getFlatNodes() {
     ...n,
     title: n.label,
     index: idx + 1,
-    depth: n.id === 'assitand' ? 0 : (['biz', 'hr', 'fin'].includes(n.id) ? 1 : 2),
+    depth: 0,
     effectiveColor: n.border,
     startDate: n.startDate || ('2026-07-0' + Math.min(9, idx + 1)),
     endDate: n.endDate || ('2026-07-1' + Math.min(9, idx + 2)),
@@ -635,6 +623,7 @@ export async function openMap(id) {
     if (json.success) {
       store.currentMapId = id
       store.graph = json.data
+      localStorage.setItem('zmind_current_map_id', id)
       closeDashboard()
     }
   } catch (err) {
@@ -648,11 +637,12 @@ export async function deleteMapFromDashboard(id) {
     const res = await fetch(`/api/maps/${id}`, { method: 'DELETE' })
     const json = await res.json()
     if (json.success) {
-      fetchMapsList()
+      await fetchMapsList()
       if (store.currentMapId === id) {
-        // Switch to default map if available
         if (store.mapList.length > 0) {
-          openMap(store.mapList[0].id)
+          await openMap(store.mapList[0].id)
+        } else {
+          await createNewMapOnAPI('Dự án mới')
         }
       }
     }
