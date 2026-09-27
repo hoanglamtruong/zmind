@@ -253,9 +253,10 @@
           <div class="rounded-xl overflow-hidden bg-gray-100 h-28 w-full border border-gray-100 flex items-center justify-center">
             <img 
               v-if="node.imageUrl" 
-              :src="node.imageUrl" 
+              :src="formatImageUrl(node.imageUrl)" 
               :alt="node.label"
               class="w-full h-full object-cover pointer-events-none"
+              loading="lazy"
             />
             <div v-else class="text-center text-gray-400 p-2">
               <ImageIcon class="w-6 h-6 mx-auto mb-1 text-gray-300" />
@@ -277,12 +278,14 @@
               <Video class="w-3.5 h-3.5 shrink-0" />
               <span class="truncate">{{ node.label }}</span>
             </div>
-            <span class="text-[9px] text-rose-500 font-mono uppercase bg-rose-50 px-1 py-0.5 rounded font-bold">Video</span>
+            <span class="text-[9px] text-rose-500 font-mono uppercase bg-rose-50 px-1 py-0.5 rounded font-bold">
+              {{ node.videoUrl && (node.videoUrl.includes('drive.google') || node.videoUrl.includes('docs.google')) ? 'G-Drive' : 'Video' }}
+            </span>
           </div>
           <div class="rounded-xl overflow-hidden bg-black h-36 w-full relative">
             <iframe 
-              v-if="getYouTubeEmbedUrl(node.videoUrl)"
-              :src="getYouTubeEmbedUrl(node.videoUrl)"
+              v-if="getVideoEmbedUrl(node.videoUrl)"
+              :src="getVideoEmbedUrl(node.videoUrl)"
               class="w-full h-full border-0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen
@@ -840,14 +843,38 @@ function openLink(url) {
   window.open(targetUrl, '_blank')
 }
 
-function getYouTubeEmbedUrl(url) {
+function extractGoogleDriveFileId(url) {
+  if (!url) return null
+  const matchD = url.match(/\/d\/([a-zA-Z0-9_-]+)/)
+  if (matchD) return matchD[1]
+  const matchId = url.match(/[?&]id=([a-zA-Z0-9_-]+)/)
+  if (matchId) return matchId[1]
+  return null
+}
+
+function formatImageUrl(url) {
   if (!url) return ''
+  if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
+    const fileId = extractGoogleDriveFileId(url)
+    if (fileId) {
+      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200`
+    }
+  }
+  return url
+}
+
+function getVideoEmbedUrl(url) {
+  if (!url) return ''
+  if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
+    const fileId = extractGoogleDriveFileId(url)
+    if (fileId) {
+      return `https://drive.google.com/file/d/${fileId}/preview`
+    }
+  }
   const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/)
   if (shortMatch) return `https://www.youtube.com/embed/${shortMatch[1]}`
-  
   const longMatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/)
   if (longMatch) return `https://www.youtube.com/embed/${longMatch[1]}`
-
   if (url.includes('youtube.com/embed/')) return url
   return url
 }

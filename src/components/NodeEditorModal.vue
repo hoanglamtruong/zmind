@@ -71,13 +71,14 @@
         <!-- 3B. TYPE = 'image' (Box ảnh) -->
         <div v-if="localForm.type === 'image'" class="space-y-3 pt-1">
           <div>
-            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1.5">Đường dẫn ảnh (Image URL)</label>
+            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1.5">Đường dẫn ảnh (Direct Link hoặc Google Drive)</label>
             <input 
               v-model="localForm.imageUrl" 
               type="text" 
               class="w-full px-3.5 py-2 border border-gray-200 rounded-xl focus:border-sky-500 focus:ring-2 focus:ring-sky-100 outline-none text-xs text-gray-800 font-mono"
-              placeholder="https://example.com/image.jpg"
+              placeholder="https://drive.google.com/file/d/... hoặc link ảnh URL"
             />
+            <p class="text-[11px] text-gray-400 mt-1">💡 Hỗ trợ link ảnh trực tiếp hoặc link chia sẻ từ <b>Google Drive</b> (cần bật quyền: <i>Bất kỳ ai có đường liên kết</i>).</p>
           </div>
 
           <!-- Quick Samples -->
@@ -108,22 +109,22 @@
           </div>
 
           <!-- Image Preview -->
-          <div v-if="localForm.imageUrl" class="mt-2 border border-gray-200 rounded-xl overflow-hidden bg-slate-50 flex items-center justify-center max-h-48">
-            <img :src="localForm.imageUrl" alt="Preview" class="max-h-44 object-contain" />
+          <div v-if="localForm.imageUrl" class="mt-2 border border-gray-200 rounded-xl overflow-hidden bg-slate-50 flex items-center justify-center max-h-48 p-1">
+            <img :src="formatImageUrl(localForm.imageUrl)" alt="Preview" class="max-h-44 object-contain rounded-lg" />
           </div>
         </div>
 
         <!-- 3C. TYPE = 'video' (Box video) -->
         <div v-if="localForm.type === 'video'" class="space-y-3 pt-1">
           <div>
-            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1.5">Link Video (YouTube hoặc MP4)</label>
+            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1.5">Link Video (YouTube hoặc Google Drive Video)</label>
             <input 
               v-model="localForm.videoUrl" 
               type="text" 
               class="w-full px-3.5 py-2 border border-gray-200 rounded-xl focus:border-sky-500 focus:ring-2 focus:ring-sky-100 outline-none text-xs text-gray-800 font-mono"
-              placeholder="https://www.youtube.com/watch?v=..."
+              placeholder="https://drive.google.com/file/d/... hoặc YouTube link"
             />
-            <p class="text-[11px] text-gray-400 mt-1">Hỗ trợ link YouTube (dạng watch?v= hoặc youtu.be/) tự động nhúng player xem trực tiếp.</p>
+            <p class="text-[11px] text-gray-400 mt-1">💡 Hỗ trợ video từ <b>YouTube</b> hoặc <b>Google Drive</b> (cần bật quyền: <i>Bất kỳ ai có đường liên kết</i>).</p>
           </div>
 
           <!-- Quick Samples -->
@@ -135,16 +136,26 @@
                 @click="localForm.videoUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'"
                 class="text-[11px] px-2.5 py-1 bg-gray-100 hover:bg-sky-100 hover:text-sky-700 text-gray-600 rounded-lg transition-colors cursor-pointer"
               >
-                Rick Astley
+                YouTube Demo
               </button>
               <button 
                 type="button"
                 @click="localForm.videoUrl = 'https://www.youtube.com/watch?v=LXb3EKWsInQ'"
                 class="text-[11px] px-2.5 py-1 bg-gray-100 hover:bg-sky-100 hover:text-sky-700 text-gray-600 rounded-lg transition-colors cursor-pointer"
               >
-                4K Nature Video
+                4K Nature
               </button>
             </div>
+          </div>
+
+          <!-- Video Preview -->
+          <div v-if="getVideoEmbedUrl(localForm.videoUrl)" class="mt-2 border border-gray-200 rounded-xl overflow-hidden bg-black h-36">
+            <iframe 
+              :src="getVideoEmbedUrl(localForm.videoUrl)" 
+              class="w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            ></iframe>
           </div>
         </div>
 
@@ -384,6 +395,42 @@ function addField() {
 
 function removeField(index) {
   localForm.fields.splice(index, 1)
+}
+
+function extractGoogleDriveFileId(url) {
+  if (!url) return null
+  const matchD = url.match(/\/d\/([a-zA-Z0-9_-]+)/)
+  if (matchD) return matchD[1]
+  const matchId = url.match(/[?&]id=([a-zA-Z0-9_-]+)/)
+  if (matchId) return matchId[1]
+  return null
+}
+
+function formatImageUrl(url) {
+  if (!url) return ''
+  if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
+    const fileId = extractGoogleDriveFileId(url)
+    if (fileId) {
+      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200`
+    }
+  }
+  return url
+}
+
+function getVideoEmbedUrl(url) {
+  if (!url) return ''
+  if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
+    const fileId = extractGoogleDriveFileId(url)
+    if (fileId) {
+      return `https://drive.google.com/file/d/${fileId}/preview`
+    }
+  }
+  const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/)
+  if (shortMatch) return `https://www.youtube.com/embed/${shortMatch[1]}`
+  const longMatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/)
+  if (longMatch) return `https://www.youtube.com/embed/${longMatch[1]}`
+  if (url.includes('youtube.com/embed/')) return url
+  return url
 }
 
 function close() {
