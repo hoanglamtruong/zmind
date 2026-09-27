@@ -3,6 +3,7 @@ import cors from 'cors'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import multer from 'multer'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -10,9 +11,32 @@ const __dirname = path.dirname(__filename)
 const app = express()
 const PORT = process.env.PORT || 3001
 const DATA_FILE = path.join(__dirname, 'data', 'maps.json')
+const UPLOADS_DIR = path.join(__dirname, 'data', 'uploads')
+
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true })
+}
 
 app.use(cors())
-app.use(express.json({ limit: '20mb' }))
+app.use(express.json({ limit: '100mb' }))
+app.use('/uploads', express.static(UPLOADS_DIR))
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, UPLOADS_DIR)
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || ''
+    const safeBase = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 30)
+    const unique = Date.now() + '_' + Math.random().toString(36).substring(2, 7)
+    cb(null, `${safeBase}_${unique}${ext}`)
+  }
+})
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 100 * 1024 * 1024 } // 100MB
+})
 
 const defaultMap = {
   id: 'map_default',
@@ -163,12 +187,51 @@ app.post('/api/restore', (req, res) => {
   res.json({ success: true, message: 'Restored successfully', count: req.body.length })
 })
 
+// 9. POST /api/upload - Upload file ảnh hoặc video từ máy tính
+app.post('/api/upload', (req, res) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ success: false, message: 'Dung lượng tệp vượt quá 100MB' })
+      }
+      return res.status(400).json({ success: false, message: err.message || 'Lỗi khi upload tệp' })
+    }
+
+    if (!req.file) {
+      // Support base64 upload fallback
+      if (req.body && req.body.base64 && req.body.filename) {
+        try {
+          const ext = path.extname(req.body.filename) || '.bin'
+          const safeBase = path.basename(req.body.filename, ext).replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 30)
+          const fname = `${safeBase}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}${ext}`
+          const base64Data = req.body.base64.replace(/^data:([A-Za-z-+/]+);base64,/, '')
+          fs.writeFileSync(path.join(UPLOADS_DIR, fname), Buffer.from(base64Data, 'base64'))
+          return res.json({ success: true, url: `/uploads/${fname}`, filename: fname })
+        } catch (e) {
+          return res.status(500).json({ success: false, message: 'Lỗi ghi tệp base64' })
+        }
+      }
+      return res.status(400).json({ success: false, message: 'Không tìm thấy tệp tải lên' })
+    }
+
+    const fileUrl = `/uploads/${req.file.filename}`
+    res.json({
+      success: true,
+      url: fileUrl,
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype
+    })
+  })
+})
+
 // Serve static build in production
 const DIST_DIR = path.join(__dirname, 'dist')
 if (fs.existsSync(DIST_DIR)) {
   app.use(express.static(DIST_DIR))
   app.use((req, res, next) => {
-    if (req.method === 'GET' && !req.path.startsWith('/api')) {
+    if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
       return res.sendFile(path.join(DIST_DIR, 'index.html'))
     }
     next()

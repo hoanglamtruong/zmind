@@ -17,7 +17,7 @@ RUN npm ci --only=production
 
 COPY server.js ./
 COPY --from=builder /app/dist ./dist
-RUN mkdir -p data
+RUN mkdir -p data/uploads
 
 EXPOSE 3000
 CMD ["node", "server.js"]

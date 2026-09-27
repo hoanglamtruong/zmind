@@ -283,8 +283,15 @@
             </span>
           </div>
           <div class="rounded-xl overflow-hidden bg-black h-36 w-full relative">
+            <video 
+              v-if="isDirectVideoUrl(node.videoUrl)"
+              :src="node.videoUrl"
+              controls
+              class="w-full h-full object-cover"
+              preload="metadata"
+            ></video>
             <iframe 
-              v-if="getVideoEmbedUrl(node.videoUrl)"
+              v-else-if="getVideoEmbedUrl(node.videoUrl)"
               :src="getVideoEmbedUrl(node.videoUrl)"
               class="w-full h-full border-0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -292,7 +299,7 @@
             ></iframe>
             <div v-else class="w-full h-full flex flex-col items-center justify-center text-gray-400 text-xs">
               <Video class="w-6 h-6 mb-1 text-gray-500" />
-              <span>Chưa gắn link video</span>
+              <span>Chưa gắn video</span>
             </div>
           </div>
         </div>
@@ -863,8 +870,14 @@ function formatImageUrl(url) {
   return url
 }
 
+function isDirectVideoUrl(url) {
+  if (!url) return false
+  if (url.startsWith('/uploads/') || url.includes('/uploads/')) return true
+  return /\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(url)
+}
+
 function getVideoEmbedUrl(url) {
-  if (!url) return ''
+  if (!url || isDirectVideoUrl(url)) return ''
   if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
     const fileId = extractGoogleDriveFileId(url)
     if (fileId) {
@@ -880,6 +893,11 @@ function getVideoEmbedUrl(url) {
 }
 
 function openNodeEditor(node) {
+  draggingNode.value = null
+  isDraggingCanvas.value = false
+  isMarqueeSelecting.value = false
+  draggingControlPoint.value = null
+  initialNodePositions.clear()
   editingNode.value = node || selectedNode.value
   isNodeEditorOpen.value = true
   showTypeSwitcher.value = false
@@ -888,6 +906,8 @@ function openNodeEditor(node) {
 function closeNodeEditor() {
   isNodeEditorOpen.value = false
   editingNode.value = null
+  draggingNode.value = null
+  isDraggingCanvas.value = false
 }
 
 function handleNodeTypeChange(type) {
@@ -1057,6 +1077,7 @@ function onCanvasMouseDown(e) {
 }
 
 function startDragNode(node, e) {
+  if (isNodeEditorOpen.value) return
   closeRelationCustomizer()
   const isCtrl = e.ctrlKey || e.metaKey
 
@@ -1087,6 +1108,11 @@ function startDragNode(node, e) {
 }
 
 function onMouseMove(e) {
+  if (isNodeEditorOpen.value) {
+    if (draggingNode.value) draggingNode.value = null
+    return
+  }
+
   if (isMarqueeSelecting.value) {
     const boardRect = boardRef.value?.getBoundingClientRect() || { left: 0, top: 0 }
     const cX = e.clientX - boardRect.left
